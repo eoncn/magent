@@ -55,3 +55,7 @@
 - [案例清单模板](stage3-case-manifest-template.md)
 
 **禁止**把此复盘作为 LLM 的“模型性能已改善”营销或技术指标引用；它是保守的、可追溯的验收与下一轮实验依据。
+
+## 第四轮小样本实验（准备阶段）
+
+为了补上 M 类 standard 无调用的测量缺口，已单独增加 [Terra standard 定向对照计划](terra-standard-targeted-trial.md)。对照只替换 standard Worker 的实际模型配置，用 4 对（8 次）相同基线任务评估。此时只有测试工具和模板，**尚无新的实测结果**；不改变本文在第三阶段得到的无收益结论。

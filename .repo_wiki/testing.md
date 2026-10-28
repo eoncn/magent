@@ -78,3 +78,10 @@ test_sync_review: FAKE_CCB + POSIX 夹具 → 跑同步审核 → 断言 envelop
 ---
 
 **相关页面**: [review-runner.md](review-runner.md) | [review-support.md](review-support.md) | [review-result.md](review-result.md) | [install-sync.md](install-sync.md) | [cross-platform.md](cross-platform.md) | [index.md](index.md)
+## 2026-10 Terra standard 定向试验
+
+- `docs/terra-standard-targeted-trial.md`：筛选 6～8 个任务，路由预筛选后 4 对 Luna 与 Terra 的隔离比较；不改变生产路由、正式模型或独立 verifier。
+- `tools/prepare_terra_trial.py`：复制两份相同 magent、注册角色，只改变实际安装 standard Worker 的模型和 effort，不复制认证、不触发模型调用。
+- `tools/analyze_terra_trial.py`：检查成对基线、prompt hash、自然 standard 路由、实际 standard Worker 调用、对应模型/verifier pin，排除环境与配置失败，统计质量/时间/Token。
+- `python3 tools/test_terra_trial.py`：仅离线检验以上工具，不代表真实 Codex 功能测试已通过。
+- 实验结果回交后才能评估是否微调标准路由；本轮不修改 CCB / `SKILL.md` / Verifier 参数。

@@ -1,0 +1,1 @@
+case_id,arm,project,base_sha,prompt_sha256,initial_route,standard_calls,observed_model,observed_effort,verifier_model,verifier_effort,verdict,acceptance_pass,elapsed_sec,input_tokens,output_tokens,retries,worker_calls,verifier_calls,notes

@@ -75,6 +75,19 @@ python3 tools/sync.py --host macos-server --host home-server --install
 
 40 次有效正式运行（20 个旧/新配对）在操作者报告中均通过；但新增 Terra standard 未在正式 M 类任务被调用，耗时与已知 Token 也未出现改善。**不宣称性能优化收益、不调整现有 Luna/Terra/Sol 路由阈值或 effort**。长任务断点恢复及 routine→standard 故障升级通过了专项真实测试。详见 [第三阶段复盘与保守收敛](docs/stage3-evaluation-2026-10-28.md)。原始 CSV、原始会话日志及本机身份/用量资料不随仓库公开。
 
+## Terra High 定向对照（独立实验，不改正式技能参数）
+
+第三阶段正式 M 类 8/8 都走 routine，不能用于证明 Terra 的正常开发收益。新增 [Terra 标准 Worker 专项实验操作手册](docs/terra-standard-targeted-trial.md)：先从真实中等任务中找到自然路由 standard 的 4 个案例，再在完全相同的 magent 配置里只替换 standard Worker 的 Luna/xhigh 与 Terra/high，对照 4 对、8 次正式执行。
+
+```bash
+python3 tools/test_terra_trial.py
+python3 tools/prepare_terra_trial.py prepare --source . --out ../terra-trial-homes
+python3 tools/prepare_terra_trial.py verify --out ../terra-trial-homes
+python3 tools/analyze_terra_trial.py ../terra-trial-results.csv --out ../terra-trial-report.md
+```
+
+环境隔离工具不复制登录凭据、不启动模型请求。试验并不改动现有 roles 模板、SKILL.md 或 CCB。资料在 `docs/terra-trial-*-template.csv`；模型实际运行、子 Agent 路由和验收需本机执行，并按真实记录填写 CSV。**不得提前声明性能提升。**
+
 ## 离线验证
 
 从本目录执行，CCB 和 Codex queue 均使用模拟命令，不发送模型请求或真实回调：
