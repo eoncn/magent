@@ -1,0 +1,1 @@
+case_id,variant,difficulty,project,base_sha,route,verdict,acceptance_pass,elapsed_sec,input_tokens,output_tokens,worker_calls,verifier_calls,retries,checkpoint_recovered,notes

@@ -1,10 +1,10 @@
 # 角色模板（roles/）
 
-> 五个具名 Codex 角色模板：routine/high × advisor/verifier，由 SKILL.md 路由规则引用。
+> 五个具名 Codex 角色模板：routine / standard / high Worker，加 routine / high Verifier，由 SKILL.md 路由规则引用。
 
 ## 概述
 
-`roles/` 下五个 TOML 文件是 Codex agent 配置模板。`SKILL.md` 的路由规则按名字引用它们；`tools/install.py --roles` 把它们复制到 `<codex-home>/agents/`。每个文件带 `sol-*-managed:v1` 标记，便于将来批量升级或检测漂移。
+`roles/` 下五个 TOML 文件是 Codex agent 配置模板。`SKILL.md` 的路由规则按名字引用它们；`tools/install.py --roles` 把它们复制到 `<codex-home>/agents/`。既有四个角色带 `sol-*-managed:v1`，新增标准角色带 `sol-advisor-managed:v2` 标记，便于将来批量升级或检测漂移。
 
 角色注册依赖目标机器现有的 agent 配置机制；安装器 **不** 改写 `config.toml`。启用技能前需确认 Codex 环境能调用全部五个角色名。
 
@@ -32,10 +32,10 @@
 - high：`gpt-6.1-sol` / `high` —— 复杂跨系统诊断、高风险实现与独立验证。
 
 ### 与 SKILL.md 的关系
-- Section 1 路由规则按名引用这四个角色。
+- Section 1 路由规则按名引用这五个角色。
 - Section 2 worker 委托契约适用于两个 advisor 角色。
 - Section 3 验证门适用于两个 verifier 角色。
-- 内置 advisor/reviewer 角色禁用；只允许这四个具名角色。
+- 内置 advisor/reviewer 角色禁用；只允许这五个具名角色。
 
 ## 工作流程
 
@@ -64,7 +64,7 @@ Codex 加载 <codex-home>/agents/<角色名>.toml
 - 安装器只 **复制** 模板到 `<home>/agents/`；不修改 `config.toml`，不注册角色。注册依赖目标机器的 Codex 配置。
 - 若目标机器已有同名文件且字节相同 → 跳过，避免无意义备份。
 - 旧文件同样备份到 `<home>/magent-install-backups/<stamp>/agents/<name>`。
-- `sol-*-managed:v1` 注释行是版本标记，便于将来检测模板漂移。
+- `sol-*-managed:v1` / `sol-advisor-managed:v2` 注释行是版本标记，便于将来检测模板漂移。
 - high 角色的 `model_reasoning_effort` 是 `high` 而非 `xhigh`：high 模型本身能力更强，reasoning effort 适度即可；routine 模型用 `xhigh` 补偿。
 - 修改这些模板会直接影响所有使用该角色的调用；改前考虑版本号或向后兼容。
 

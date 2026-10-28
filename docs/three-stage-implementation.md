@@ -89,7 +89,7 @@
 
 ### 3.3 测试集：20 个任务，固定输入
 
-从**可独立重放的 Git 提交**中选择任务，先列出 case_id / 仓库 / base_sha / 任务说明 / 验收命令 / 允许修改范围 / 难度。建议：
+使用 `docs/stage3-case-manifest-template.md` 记录样本选择依据；从**可独立重放的 Git 提交**中选择任务，先列出 case_id / 仓库 / base_sha / 任务说明 / 验收命令 / 允许修改范围 / 难度。建议：
 
 | ID | 数量 | 类型 | 例子 | 预期主要路由 |
 | --- | ---: | --- | --- | --- |
@@ -125,7 +125,7 @@
 
 ### 3.5 结果 CSV 与自动汇总
 
-将全部配对结果填写到 stage3-results.csv（UTF-8）。每个 case 两行，建议字段固定为：
+从 `docs/stage3-results-template.csv` 复制表头，将全部配对结果填写到 stage3-results.csv（UTF-8）。每个 case 两行，建议字段固定为：
 
     case_id,variant,difficulty,project,base_sha,route,verdict,acceptance_pass,elapsed_sec,input_tokens,output_tokens,worker_calls,verifier_calls,retries,checkpoint_recovered,notes
 
@@ -141,6 +141,8 @@
 
 运行：
 
+    cp magent-source/docs/stage3-results-template.csv stage3-results.csv
+    # 按照任务逐行补全 old/new 的实测记录（不能保留空白示例行）
     python3 magent-source/tools/analyze_stage3.py stage3-results.csv --out stage3-report.md
 
 分析工具会校验配对完整性，计算全量与 S/M/H 分层的成功率、总时长、已知 token 合计、重试次数、路由分布；缺失/基础设施失败样本必须单独列示，不能混进成功率分母。
@@ -184,6 +186,7 @@
     python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"   # POSIX
     python3 scripts/test_task_state.py
     python3 tools/test_skill_config.py
+    python3 tools/test_stage3_analyzer.py
     python3 tools/check_role_registration.py --home ~/.codex
 
-最后一条只读验证现有 Codex home，缺少角色时应报告并退出非 0，不修改 config.toml。第一至四条是离线回归，不代表真实 Codex 模型运行已通过。
+最后一条只读验证现有 Codex home，缺少角色时应报告并退出非 0，不修改 config.toml。上述 Python tests 是离线回归，不代表真实 Codex 模型运行已通过。

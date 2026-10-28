@@ -79,6 +79,7 @@ python3 tools/sync.py --host macos-server --host home-server --install
 python3 tools/test_maintenance.py
 python3 tools/test_skill_config.py
 python3 scripts/test_task_state.py
+python3 tools/test_stage3_analyzer.py
 python3 scripts/test_review_runner.py
 # Linux/macOS：同步审核套件使用 POSIX 文件系统夹具
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"

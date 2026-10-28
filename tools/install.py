@@ -94,7 +94,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--home", action="append", type=Path,
                         help="Codex home; repeatable, defaults to ~/.codex and ~/.codex-us")
-    parser.add_argument("--roles", action="store_true", help="also install the four role templates; leaves config.toml untouched")
+    parser.add_argument("--roles", action="store_true", help="also install the five role templates; leaves config.toml untouched")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not (SOURCE / "SKILL.md").is_file():

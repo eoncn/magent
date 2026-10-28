@@ -35,7 +35,7 @@ python3 scripts/test_task_state.py
 python3 scripts/test_review_runner.py
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"   # POSIX only
 ```
-The third suite uses POSIX-only filename/FIFO/mode/symlink fixtures; run it on Linux. Tests exercise real Git with mocked CCB/queue, including callback retry, timeout, mutation, stop, resume, PID validation. A live integration check needs a dedicated authorized Codex thread plus working CCB auth and is **not** implied by offline test success.
+The sync_review suite uses POSIX-only filename/FIFO/mode/symlink fixtures; run it on Linux. Tests exercise real Git with mocked CCB/queue, including callback retry, timeout, mutation, stop, resume, PID validation. A live integration check needs a dedicated authorized Codex thread plus working CCB auth and is **not** implied by offline test success.
 
 ## Architecture
 

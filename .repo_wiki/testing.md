@@ -1,6 +1,6 @@
 # 离线测试体系
 
-> 五套测试，全部离线运行：mocked CCB/queue，不发送模型请求或真实回调。
+> 六套测试，全部离线运行：mocked CCB/queue，不发送模型请求或真实回调。
 
 ## 概述
 
@@ -42,13 +42,14 @@
 
 - `tools/test_skill_config.py`：静态路由、5 角色映射、配置注册检测，不请求真实模型。
 - `scripts/test_task_state.py`：任务状态创建/修订/冲突/验收关闭/权限/恢复路径，不访问业务仓库。
-- `tools/analyze_stage3.py`：供用户本地测试后汇总配对 CSV，无法替代真实 Codex A/B。
+- `tools/analyze_stage3.py` 与 `tools/test_stage3_analyzer.py`：本地配对 CSV 严格校验及汇总，不替代真实 Codex A/B。
 
 ## 测试入口
 ```bash
 python3 tools/test_maintenance.py
 python3 tools/test_skill_config.py
 python3 scripts/test_task_state.py
+python3 tools/test_stage3_analyzer.py
 python3 scripts/test_review_runner.py
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"   # POSIX only
 ```
