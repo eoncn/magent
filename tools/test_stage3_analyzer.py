@@ -44,6 +44,38 @@ class AnalyzerTests(unittest.TestCase):
             self.sample(p, change=True)
             self.assertIn("REGRESSION", mod.render(mod.load_pairs(p)))
 
+    def test_missing_terra_coverage_warning_for_medium_pair(self):
+        with tempfile.TemporaryDirectory() as temp:
+            p = Path(temp) / "results.csv"
+            self.sample(p)
+            rows = list(csv.DictReader(p.open(encoding="utf-8")))
+            for row in rows:
+                row["case_id"] = "M01"
+                row["difficulty"] = "M"
+                row["route"] = "routine"
+            with p.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=mod.COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            report = mod.render(mod.load_pairs(p))
+            self.assertIn("New M-class initial standard route: 0/1", report)
+            self.assertIn("no new M-class case declared standard", report)
+
+    def test_missing_tokens_are_explicit_not_zero(self):
+        with tempfile.TemporaryDirectory() as temp:
+            p = Path(temp) / "results.csv"
+            self.sample(p)
+            rows = list(csv.DictReader(p.open(encoding="utf-8")))
+            rows[1]["input_tokens"] = ""
+            rows[1]["output_tokens"] = ""
+            with p.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=mod.COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            report = mod.render(mod.load_pairs(p))
+            self.assertIn("Missing complete token pairs: 1/1", report)
+            self.assertIn("not present it as total experiment usage", report)
+
     def test_incomplete_pair_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             p = Path(temp) / "results.csv"

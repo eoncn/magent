@@ -102,6 +102,15 @@ def render(pairs):
         lines.append(f"| {label} | {s['eligible']} | {s['old_pass']} | {s['new_pass']} | "
                      f"{sec(s['old_time_avg'])} | {sec(s['new_time_avg'])} | {s['excluded']} |")
     all_stats = results["ALL"]
+    # Route is the initially declared route, not a complete history of agents
+    # actually invoked after remediation; the latter requires session logs.
+    medium_pairs = {cid: pair for cid, pair in pairs.items()
+                    if pair["old"]["difficulty"] == "M"}
+    medium_valid = {cid: pair for cid, pair in medium_pairs.items()
+                    if not any(row["verdict"] in EXCLUDED for row in pair.values())}
+    medium_standard_initial = sum(
+        pair["new"]["route"] == "standard" for pair in medium_valid.values())
+    missing_token_pairs = all_stats["eligible"] - all_stats["token_pairs"]
     lines += ["", f"Total paired cases: {all_stats['paired']}. Valid comparisons: {all_stats['eligible']}.",
               f"Known complete-token pairs: {all_stats['token_pairs']}; "
               f"old={all_stats['old_tokens']}, new={all_stats['new_tokens']} (input+output only).",
@@ -109,6 +118,13 @@ def render(pairs):
               "(missing retry values are omitted, not treated as measured zero).",
               f"Old route distribution: {all_stats['old_route']}",
               f"New route distribution: {all_stats['new_route']}",
+              f"New M-class initial standard route: {medium_standard_initial}/{len(medium_valid)} "
+              "(route field records the initial declaration, not all subagent calls).",
+              f"Missing complete token pairs: {missing_token_pairs}/{all_stats['eligible']} "
+              "(missing values are not zero).",
+              f"Known retry rows: old={sum(p['old']['retries'] is not None for p in pairs.values())}, "
+              f"new={sum(p['new']['retries'] is not None for p in pairs.values())} "
+              "(includes excluded pairs; inspect status before interpreting).",
               "", "## Pairs needing attention", ""]
     flagged = False
     for cid, pair in pairs.items():
@@ -132,6 +148,15 @@ def render(pairs):
               "- Token comparisons include only cases with both variants' input/output tokens recorded.",
               "- 20 cases are a directional smoke benchmark, not a confidence interval or randomized controlled trial.",
               "- Return this report, the CSV, task manifest, redacted failures and a long-task recovery report."]
+    if medium_valid and medium_standard_initial == 0:
+        lines += ["", "WARNING: no new M-class case declared standard as its initial "
+                  "route; this CSV cannot establish a Terra standard-worker "
+                  "quality or efficiency benefit. Inspect actual session logs "
+                  "for escalation/worker history."]
+    if missing_token_pairs:
+        lines += ["", f"WARNING: token comparison covers only "
+                  f"{all_stats['token_pairs']}/{all_stats['eligible']} eligible pairs; "
+                  "do not present it as total experiment usage or billing."]
     if len(pairs) < 20:
         lines += ["", f"WARNING: only {len(pairs)} / 20 planned cases supplied."]
     return "\n".join(lines) + "\n"

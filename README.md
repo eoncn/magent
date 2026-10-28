@@ -71,6 +71,10 @@ python3 tools/sync.py --host macos-server --host home-server --install
 
 主 Agent 对跨阶段任务可运行 `python3 scripts/task_state.py init --repo /path/to/project --objective "任务" --scope "范围" --baseline <sha>`，通过 `checkpoint/show/list/close` 维护状态。检查点位于 `$CODEX_HOME/magent-tasks`（或 `MAGENT_TASKS_DIR`），不放进业务 Git。单个任务仅允许主 Agent 写入，更新时必须指定 `--expected-revision`；只有独立验收通过且无待办时才能 close。使用范例与第三阶段本地评测见 [三阶段实施计划](docs/three-stage-implementation.md)。
 
+## 第三阶段实测复盘（2026-10-28）
+
+40 次有效正式运行（20 个旧/新配对）在操作者报告中均通过；但新增 Terra standard 未在正式 M 类任务被调用，耗时与已知 Token 也未出现改善。**不宣称性能优化收益、不调整现有 Luna/Terra/Sol 路由阈值或 effort**。长任务断点恢复及 routine→standard 故障升级通过了专项真实测试。详见 [第三阶段复盘与保守收敛](docs/stage3-evaluation-2026-10-28.md)。原始 CSV、原始会话日志及本机身份/用量资料不随仓库公开。
+
 ## 离线验证
 
 从本目录执行，CCB 和 Codex queue 均使用模拟命令，不发送模型请求或真实回调：
