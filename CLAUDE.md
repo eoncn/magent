@@ -30,6 +30,8 @@ Requires clean local and remote worktrees. Pulls via upstream, fast-forward only
 ### Offline tests (no model requests, no real callbacks, mocked CCB/queue)
 ```bash
 python3 tools/test_maintenance.py
+python3 tools/test_skill_config.py
+python3 scripts/test_task_state.py
 python3 scripts/test_review_runner.py
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"   # POSIX only
 ```
@@ -48,7 +50,7 @@ The Lead Coordinator declares a `SELECTIVE ROUTE` with `mode` (solo | delegate),
 - Worker dispatch prompts MUST follow the `OBJECTIVE / FILES AND OWNERSHIP / INTERFACES & CONTRACTS / CONSTRAINTS / VERIFICATION COMMANDS` structure.
 
 ### Independent verification gate (Section 3 of SKILL.md)
-The parent **must not** run build/test/lint, inspect raw logs, or do `git status`/`git diff` directly. Verification is always delegated to a fresh verifier subagent. The verifier is read-only: it must not edit source, apply fixes, run autofix, or mutate Git. It returns a standardized Markdown report under 30 lines: `VERDICT / TESTS_STATUS / SCOPE_CHECK / RISK_ASSESSMENT? / DEFECT_LIST`. PASS requires all applicable checks to actually complete; missing evidence or blocked commands produce FAIL. On FAIL, re-delegate to the worker with defect feedback, then obtain a fresh verifier report. A verifier failure never enables external review.
+For long tasks, the Lead can persist state with `scripts/task_state.py` (outside the repository, single writer, revision guarded). FAIL remediation is bounded: one focused same-tier retry, Luna→Terra→Sol escalation, six attempts maximum per milestone. Checkpoint success is not independent test proof. The parent **must not** run build/test/lint, inspect raw logs, or do `git status`/`git diff` directly. Verification is always delegated to a fresh verifier subagent. The verifier is read-only: it must not edit source, apply fixes, run autofix, or mutate Git. It returns a standardized Markdown report under 30 lines: `VERDICT / TESTS_STATUS / SCOPE_CHECK / RISK_ASSESSMENT? / DEFECT_LIST`. PASS requires all applicable checks to actually complete; missing evidence or blocked commands produce FAIL. On FAIL, re-delegate to the worker with defect feedback, then obtain a fresh verifier report. A verifier failure never enables external review.
 
 ### External Claude review (Section 4 of SKILL.md + references/external-review.md)
 Disabled by default. The only way to enable it is the literal `--claude-review` as the **first argument** of the skill invocation (e.g. `$magent --claude-review fix the bug`). Do not infer the flag from task text, examples, or add it yourself. Missing, misplaced, or unknown flag ⇒ disabled. The flag applies to a single invocation only.
@@ -126,3 +128,6 @@ Edit source only here. After local checks pass, commit and push, then run `tools
 3. **跟随 wiki 中的源码链接**：wiki 页面会引用具体源文件路径（如 `scripts/review_runner.py:322`），按这些链接深入源码
 4. **跟随 wiki 底部的"相关页面"链接**：如果修改涉及多个子系统，按链接读取相关 wiki 页面
 5. **修改代码**：在 wiki 提供的结构性理解指导下，进行精确的手术式修改
+## Phase 1/2 magent evolution
+
+Roadmap and Stage 3 local A/B experiment: `docs/three-stage-implementation.md`. Terra/high standard worker added while preserving routine Luna/xhigh, high Sol/high, and default independent verification. Lead-only checkpoints: `scripts/task_state.py`; offline tests: `scripts/test_task_state.py`, `tools/test_skill_config.py`. Do not equate tests of tooling with real model success rates.

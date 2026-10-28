@@ -47,11 +47,12 @@ DEFECT_LIST:
 - 缺证据、被阻塞/失败的命令、不完整的检查 → FAIL，**绝不** 推断 PASS。
 - 父会话用基线区分"预先存在/并发的编辑"与 worker 的改动，不把每个脏文件都算到 worker 头上。
 
-### FAIL 后的循环
-1. 父会话把缺陷反馈带给 worker，重新委托。
-2. 对受影响的检查重新获取 **新鲜的** 独立 verifier 报告。
-3. 环境阻塞也通过委托解决；不重复未变的失败检查，不用父会话手工验证替代。
-4. verifier 失败留在这个修复循环里，**不** 自动触发外部审核。
+### FAIL 后的有界处理
+1. Verifier FAIL 分类：代码缺陷、范围违规、环境阻塞或证据不足。
+2. 同一缺陷原层定向修复最多一次，再失败按 Luna→Terra→Sol 单向升级；每个里程碑最多六次修复尝试。Sol 仍失败则报告阻塞，不无限重试。
+3. 环境故障保持 blocked，不能误判 PASS，也不能自动启用外部 Claude。
+4. 每次修复后重新使用独立 Verifier；父会话不能绕过验收门。
+5. 多阶段任务主 Agent 使用 `scripts/task_state.py` 保存检查点，状态文件位于 Codex home 外置目录；CLI 明确恢复、单写入者、revision 防过期更新。详情见 `docs/three-stage-implementation.md`。
 
 ### 与外部审核的衔接
 - 默认：verifier PASS → 接受工作（本次未 opt-in 外部审核）。
@@ -72,7 +73,7 @@ verifier 返回 <30 行报告
   ↓
 父会话只读报告:
   PASS → (默认) 接受 | (opt-in) 外部审核
-  FAIL → 带缺陷反馈重新委托 worker → 新 verifier 报告
+  FAIL → 按上限定向修复 / 升级 worker → 新 verifier 报告
 ```
 
 ## 注意事项

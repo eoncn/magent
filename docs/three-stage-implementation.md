@@ -34,7 +34,7 @@
 5. 增加任务状态命令的离线测试以及路由/角色/文档一致性测试。旧审核器、回调生命周期不改动。
 
 ### 验收标准
-- create/show/list/checkpoint/close 的合法输入与错误路径可用；数据不会覆盖其他任务；非法 ID 拒绝；私有目录权限和写入原子性有测试。
+- init/show/list/checkpoint/close 的合法输入与错误路径可用；数据不会覆盖其他任务；非法 ID 拒绝；私有目录权限和写入原子性有测试。
 - 不存在没有上限的同缺陷修复循环；没有 PASS 就不能汇报成功。
 - 主 Agent 不运行原本禁止的构建、测试、diff 验收命令；只消费 Verifier 摘要。
 - 以上均可离线验证；模型决策质量仍由阶段 3 测量。
@@ -158,11 +158,11 @@
 ### 3.7 必须附加的长任务恢复专项测试
 
 选择一个真实跨阶段任务（建议 3 个里程碑）：
-1. 发起任务，使主 Agent 创建 task_state，保存 objective/base_sha/scope 和当前里程碑。
-2. 完成第 1 里程碑并运行 checkpoint；核对 show 输出、任务状态以及未通过验收时不会写成 completed。
+1. 发起任务，使主 Agent 运行 task_state.py init 保存 objective/base_sha/scope 和当前里程碑（获取 task_id、revision=0）。
+2. 完成第 1 里程碑并运行 checkpoint --expected-revision 0；核对 show 的 revision=1、completed 阶段记录，以及未通过验收时不能执行 close（completed 列表记录阶段进展，不等于最终 PASS）。
 3. 在会话压缩、Codex exec resume 或新启动的会话中，给出 task_id（不复制此前全部上下文），要求先 show 再继续；记录恢复的下一步、是否遗漏文件 ownership。
 4. 模拟一次 Verifier FAIL，核对同缺陷只在原层修复一次；再次失败应逐层升级且有停止界限。**不得为测试故意改动生产仓库**。
-5. 阶段全部验收成功后 close，核对 checkpoint 标记 closed，不再误当未完成任务。
+5. 所有阶段的独立验收通过后，先 checkpoint --expected-revision <n> --phase verification --verdict pass --next "" --blocker ""，获取新 revision，再 close --expected-revision <new-n>；检查 status=closed。
 
 这项恢复测试至少旧版、新版各执行一次；旧版没有 task_state 工具时记录 “N/A，依赖会话上下文”，不能伪造对应数字。
 

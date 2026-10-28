@@ -16,22 +16,22 @@ External Claude review is disabled by default. The selected independent verifier
 
 Before implementation, evaluate **boundedness, ambiguity, dependencies, safety impact, and testability**. Declare:
 
-\`\`\`text
+```text
 SELECTIVE ROUTE
 mode: solo | delegate
 target_agent: none | sol_advisor_routine | sol_advisor_standard | sol_advisor_high
 verifier_agent: none | sol_verifier_routine | sol_verifier_high
 reasoning_rationale: <concrete risk/complexity evidence and model selection>
-\`\`\`
+```
 
 ### Routing rules (three implementation tiers)
 
 1. **solo**: minor contained single-file edits only. Parent may implement, but still delegates independent verification. Do not use solo to bypass verification.
-2. **sol_advisor_routine** — \`gpt-6-luna / xhigh\`: bounded tasks with clear ownership, settled interfaces and directly executable acceptance criteria; e.g. localized bug fix, unit tests, small route or CLI addition. Number of edited files is not an absolute limit.
-3. **sol_advisor_standard** — \`gpt-6.1-terra / high\` (**default for ordinary software engineering**): multi-file feature work, established API/DB contracts, nontrivial but patterned refactoring, moderate debugging and coordinated implementation/tests. Prefer standard if routine task boundaries are ambiguous or a first routine retry did not resolve the same defect.
-4. **sol_advisor_high** — \`gpt-6.1-sol / high\`: unknown root causes spanning interacting subsystems, security/privilege-sensitive paths, subtle concurrency or cryptography, high-impact architectural decisions, breaking migrations without settled patterns, or justified escalation after standard cannot locate/fix a defect. State the *specific* evidence; file count alone is insufficient.
-5. **Verifier selection is independent of worker tier**. Use \`sol_verifier_routine\` (\`gpt-6-luna / xhigh\`) for normal tests and scope validation. Use \`sol_verifier_high\` (\`gpt-6.1-sol / high\`) for security/privilege-sensitive changes, concurrency/cryptographic or financial invariants, breaking migrations, or other clearly identified high-risk invariants. Name the risk in the route. Both use fresh, read-only contexts.
-6. A missing/unavailable selected role is a **blocker**, not permission to silently switch models, run a review in the parent, or bypass independent verification. \`verifier_agent: none\` is allowed only if there are no implementation changes and no acceptance gate.
+2. **sol_advisor_routine** — `gpt-6-luna / xhigh`: bounded tasks with clear ownership, settled interfaces and directly executable acceptance criteria; e.g. localized bug fix, unit tests, small route or CLI addition. Number of edited files is not an absolute limit.
+3. **sol_advisor_standard** — `gpt-6.1-terra / high` (**default for ordinary software engineering**): multi-file feature work, established API/DB contracts, nontrivial but patterned refactoring, moderate debugging and coordinated implementation/tests. Prefer standard if routine task boundaries are ambiguous or a first routine retry did not resolve the same defect.
+4. **sol_advisor_high** — `gpt-6.1-sol / high`: unknown root causes spanning interacting subsystems, security/privilege-sensitive paths, subtle concurrency or cryptography, high-impact architectural decisions, breaking migrations without settled patterns, or justified escalation after standard cannot locate/fix a defect. State the *specific* evidence; file count alone is insufficient.
+5. **Verifier selection is independent of worker tier**. Use `sol_verifier_routine` (`gpt-6-luna / xhigh`) for normal tests and scope validation. Use `sol_verifier_high` (`gpt-6.1-sol / high`) for security/privilege-sensitive changes, concurrency/cryptographic or financial invariants, breaking migrations, or other clearly identified high-risk invariants. Name the risk in the route. Both use fresh, read-only contexts.
+6. A missing/unavailable selected role is a **blocker**, not permission to silently switch models, run a review in the parent, or bypass independent verification. `verifier_agent: none` is allowed only if there are no implementation changes and no acceptance gate.
 
 Built-in advisor/reviewer roles remain disabled unless expressly configured outside this skill. The five named roles above are allowed; do not add mandatory review passes. External Claude review remains strictly opt-in.
 
@@ -84,7 +84,29 @@ The Lead Coordinator MUST NOT run build, test, or lint commands, inspect raw log
    ```
 
    PASS requires all applicable checks to complete successfully and no unresolved defects or scope violations. Missing evidence, blocked/failed commands, or incomplete checks produce FAIL with the reason; never infer PASS. Attribute pre-existing/concurrent edits using the baseline rather than treating every dirty file as a worker change.
-5. The Lead Coordinator reads **only this concise report**. On PASS, accept the work if this invocation did not explicitly opt in to Section 4; otherwise proceed to the optional External Independent Claude Review. In that section, "parent verification" means this delegated verification gate; populate `PARENT VERIFICATION EVIDENCE` with the verifier's concise check results and exit codes, without opening raw evidence. On FAIL, re-delegate to the worker with specific defect feedback, then obtain a fresh independent verifier report for the affected checks. For solo edits, delegate remediation to the appropriate worker. Resolve environmental blockers through delegation; do not repeat unchanged failed checks or substitute parent-side manual verification. A verifier failure stays in this remediation loop and does not trigger Claude review automatically.
+5. The Lead Coordinator reads **only this concise report**. On PASS, accept the work if this invocation did not explicitly opt in to Section 4; otherwise proceed to the optional External Independent Claude Review. In that section, "parent verification" means this delegated verification gate; populate `PARENT VERIFICATION EVIDENCE` with the verifier's concise check results and exit codes, without opening raw evidence. On FAIL, follow the bounded retry/escalation policy in Section 3.5: re-delegate targeted remediation, then obtain a fresh independent verifier report for the affected checks. For solo edits, delegate remediation to the appropriate worker. Resolve environmental blockers through delegation; do not repeat unchanged failed checks or substitute parent-side manual verification. A verifier failure follows Section 3.5's bounded escalation and does not trigger Claude review automatically.
+
+---
+
+## 3.5 Long-task continuity and bounded remediation
+
+**The Lead remains the long-task owner.** Workers own bounded implementation only. Do not ask a worker to reconstruct earlier decisions from an old conversation. Use a lightweight, durable checkpoint for multi-stage work or whenever compaction/handoff/restart may occur:
+
+- The optional cross-platform command is `python3 <skill-root>/scripts/task_state.py` (Windows: `py -3`). Default state directory is `CODEX_HOME/magent-tasks` (falling back to `~/.codex/magent-tasks`); optional `MAGENT_TASKS_DIR` override. Never write task state into the business repository, Git index or external review state directory; do not record secrets.
+- Start once: `python3 scripts/task_state.py init --repo <absolute-path> --objective "<goal>" --scope "<owned paths>" --baseline <sha>`. Record returned `task_id` and `revision=0` in the Lead handoff. For recovery use `list --repo <path>` and `show <task_id>` before dispatching another worker.
+- At meaningful milestones, before context compaction, and after failed verification, use `checkpoint <task_id> --expected-revision <revision> --phase <planning|implementation|verification|remediation|blocked> --completed "<achievement>" --next "<next action>" --route <routine|standard|high|solo> --verdict <pending|pass|fail|blocked> --retry-count <n>`. Multiple `--completed` or `--next` values are allowed. Use `--next ""` to clear next steps. A stale revision is a blocker: re-read state; do not overwrite another writer's progress. The Lead is the **single writer** for each task.
+- Mark final success only after the independent Verifier PASS and no pending steps: `checkpoint <id> --expected-revision <n> --phase verification --verdict pass --next "" --blocker ""`, then `close <id> --expected-revision <new-n>`. `close` fails unless the latest verdict is PASS and no blocker or next steps remain. An incomplete check may never be marked PASS.
+- Never treat a task checkpoint as proof of tests. The independent verifier's concise report is still authoritative for acceptance; parent must not inspect raw logs/diffs or run verification commands.
+
+**Bounded fail policy (per defect signature and milestone):**
+
+1. Classify FAIL from the verifier report as **code defect**, **scope violation**, **test/infra blocker**, or **insufficient evidence**; capture the failing invariant and relevant command/exit status. Do not repeat an unchanged failing command while its environment is still blocked. Persist `phase=blocked` plus a blocker description, and report to user if prerequisites cannot be restored.
+2. For a code defect or scope violation, permit **at most one focused remediation attempt by the same worker tier** with specific defect evidence, followed by a fresh independent verifier. Do not perform repeated full-file rewrites or restart a new review just to get PASS.
+3. If the same failure persists, or a hard technical constraint emerges, escalate monotonically: **Luna routine → Terra standard → Sol high**. Each escalated tier may perform one bounded fix and at most one focused retry; use a fresh verifier after each change. If high still cannot pass, report blocker and evidence rather than looping.
+4. Across a milestone, **at most six remediation attempts total**, regardless of changing defect names. A user-authorized new milestone may have a fresh budget; never silently reset a failed milestone to evade the bound.
+5. High-risk invariants independently select the high verifier, even for routine/standard workers. No automatic Claude/CCB call on failure. External review still requires the explicit first-argument opt-in from Section 4.
+
+The checkpoint tool is intentionally not a process supervisor and does not automatically resume Codex execution: the Lead explicitly continues the task from a verified snapshot.
 
 ---
 

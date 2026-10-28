@@ -1,6 +1,6 @@
 # 离线测试体系
 
-> 三套测试，全部离线运行：mocked CCB/queue，不发送模型请求或真实回调。
+> 五套测试，全部离线运行：mocked CCB/queue，不发送模型请求或真实回调。
 
 ## 概述
 
@@ -38,9 +38,17 @@
 - POSIX-only 夹具：`WEIRD_NAME`（含换行/非 ASCII 字节的文件名）、FIFO、mode 位、symlink。Windows 跳过。
 - 验证 envelope：CCB 事件数组、缺 `structured_output`、schema 漂移、verdict/finding 矛盾、`NaN/Infinity` 拒绝。
 
-### 测试入口
+### 新增阶段 1/2 测试
+
+- `tools/test_skill_config.py`：静态路由、5 角色映射、配置注册检测，不请求真实模型。
+- `scripts/test_task_state.py`：任务状态创建/修订/冲突/验收关闭/权限/恢复路径，不访问业务仓库。
+- `tools/analyze_stage3.py`：供用户本地测试后汇总配对 CSV，无法替代真实 Codex A/B。
+
+## 测试入口
 ```bash
 python3 tools/test_maintenance.py
+python3 tools/test_skill_config.py
+python3 scripts/test_task_state.py
 python3 scripts/test_review_runner.py
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"   # POSIX only
 ```

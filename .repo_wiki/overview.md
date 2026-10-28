@@ -68,6 +68,10 @@ FAIL? → 带缺陷反馈重新委托 worker → 新 verifier 报告
 | `MAGENT_REVIEW_SESSION_ID` | 随机 UUID | 持久 CCB 会话 ID |
 | `MAGENT_REVIEW_RESUME` | `0` | 设为 `1` 时传 `--resume` 而非 `--session-id` |
 
+## 长任务支持（Phase 2）
+
+主 Agent 在里程碑、上下文压缩前、故障恢复时调用 `scripts/task_state.py`；状态置于 `$CODEX_HOME/magent-tasks`，与代码仓库及 CCB 运行目录分离。状态通过 revision 防过期覆盖，要求单 writer，Verifier PASS 才能 close。Verifier FAIL 的同缺陷定向修复最多一次，随后 Luna→Terra→Sol 递进，六次修复上限，最终失败报告阻塞。参考 `docs/three-stage-implementation.md`。
+
 ## 注意事项
 
 - 只在本仓库改源码。提交推送后用 `tools/sync.py` 更新远端，不要在远端直接编辑。

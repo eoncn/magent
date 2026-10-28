@@ -67,12 +67,18 @@ python3 tools/sync.py --host macos-server --host home-server --install
 版本回退也在 Git 仓库操作；入口仍链接到该检出。回退前先结束现有外部审核任务，
 避免后台进程跨版本加载脚本。原安装备份可用于手工恢复入口。
 
+## 长任务检查点和角色检测
+
+主 Agent 对跨阶段任务可运行 `python3 scripts/task_state.py init --repo /path/to/project --objective "任务" --scope "范围" --baseline <sha>`，通过 `checkpoint/show/list/close` 维护状态。检查点位于 `$CODEX_HOME/magent-tasks`（或 `MAGENT_TASKS_DIR`），不放进业务 Git。单个任务仅允许主 Agent 写入，更新时必须指定 `--expected-revision`；只有独立验收通过且无待办时才能 close。使用范例与第三阶段本地评测见 [三阶段实施计划](docs/three-stage-implementation.md)。
+
 ## 离线验证
 
 从本目录执行，CCB 和 Codex queue 均使用模拟命令，不发送模型请求或真实回调：
 
 ```bash
 python3 tools/test_maintenance.py
+python3 tools/test_skill_config.py
+python3 scripts/test_task_state.py
 python3 scripts/test_review_runner.py
 # Linux/macOS：同步审核套件使用 POSIX 文件系统夹具
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"
