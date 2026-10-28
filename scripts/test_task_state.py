@@ -50,6 +50,21 @@ class TaskStateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             mod.close_task(self.root, s["task_id"], s["revision"])
 
+    def test_retry_cap_and_authorized_milestone(self):
+        s = mod.init_task(self.root, self.business_repo, "Long task", "src")
+        s = mod.checkpoint(self.root, s["task_id"], 0, retry_count=6)
+        with self.assertRaises(ValueError):
+            mod.checkpoint(self.root, s["task_id"], 1, retry_count=7)
+        with self.assertRaises(ValueError):
+            mod.checkpoint(self.root, s["task_id"], 1, retry_count=0)
+        with self.assertRaises(ValueError):
+            mod.checkpoint(self.root, s["task_id"], 1, new_milestone=True)
+        s = mod.checkpoint(self.root, s["task_id"], 1, verdict="pass")
+        s = mod.checkpoint(self.root, s["task_id"], 2, new_milestone=True, phase="planning")
+        self.assertEqual(s["milestone"], 2)
+        self.assertEqual(s["retry_count"], 0)
+        self.assertEqual(s["last_verdict"], "pending")
+
     def test_invalid_id_and_symlink(self):
         with self.assertRaises(ValueError):
             mod.read_task(self.root, "../escape")

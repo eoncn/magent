@@ -98,19 +98,27 @@ def init_task(root, repo, objective, scope, baseline="", phase="planning"):
         "last_verdict": "pending",
         "route": "",
         "retry_count": 0,
+        "milestone": 1,
     }
     atomic_write(path, state)
     return state
 
 
 def checkpoint(root, task_id, expected_revision, phase=None, completed=None,
-               next_steps=None, blocker=None, verdict=None, route=None, retry_count=None):
+               next_steps=None, blocker=None, verdict=None, route=None, retry_count=None,
+               new_milestone=False):
     root = ensure_root(root)
     state = read_task(root, task_id)
     if state["status"] != "active":
         raise ValueError("Closed tasks cannot be checkpointed")
     if expected_revision != state["revision"]:
         raise ValueError(f"Revision mismatch: expected {expected_revision}, actual {state['revision']}")
+    if new_milestone:
+        if state["last_verdict"] != "pass" or state["blocker"]:
+            raise ValueError("A new milestone requires previous independent PASS")
+        state["milestone"] += 1
+        state["retry_count"] = 0
+        state["last_verdict"] = "pending"
     if phase is not None:
         if phase not in PHASES or phase == "complete":
             raise ValueError("Invalid checkpoint phase")
@@ -133,8 +141,8 @@ def checkpoint(root, task_id, expected_revision, phase=None, completed=None,
             raise ValueError("Invalid route")
         state["route"] = route
     if retry_count is not None:
-        if retry_count < 0:
-            raise ValueError("Negative retry count")
+        if not state["retry_count"] <= retry_count <= 6:
+            raise ValueError("Retry counter must be monotonic and at most six per milestone")
         state["retry_count"] = retry_count
     if state["phase"] == "blocked" and not state["blocker"]:
         raise ValueError("Blocked phase requires a blocker description")
@@ -200,6 +208,7 @@ def main(argv=None):
     cp.add_argument("--verdict", choices=VERDICTS)
     cp.add_argument("--route", choices=ROUTES)
     cp.add_argument("--retry-count", type=int)
+    cp.add_argument("--new-milestone", action="store_true", help="after verified PASS, reset retry budget for a user-authorized next milestone")
     end = actions.add_parser("close", help="close a verified, finished task")
     end.add_argument("task_id")
     end.add_argument("--expected-revision", type=int, required=True)
@@ -215,7 +224,7 @@ def main(argv=None):
         elif args.command == "checkpoint":
             result = checkpoint(root, args.task_id, args.expected_revision, args.phase,
                                 args.completed, args.next_steps, args.blocker, args.verdict,
-                                args.route, args.retry_count)
+                                args.route, args.retry_count, args.new_milestone)
         elif args.command == "close":
             result = close_task(root, args.task_id, args.expected_revision)
         else:
