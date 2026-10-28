@@ -14,6 +14,7 @@ Lead Coordinator 在动手之前必须显式声明一个 `SELECTIVE ROUTE` 块�
 |---------|------|
 | `SKILL.md` | Section 1 路由规则、Section 2 worker 委托契约、Section 3 验证门、Section 4 外部审核 |
 | `roles/sol-advisor-routine.toml` | `gpt-6-luna` / `xhigh`，routine 实现 |
+| `roles/sol-advisor-standard.toml` | `gpt-6.1-terra` / `high`，常规实现 |
 | `roles/sol-advisor-high.toml` | `gpt-6.1-sol` / `high`，高难度实现 |
 | `roles/sol-verifier-routine.toml` | `gpt-6-luna` / `xhigh`，routine 验证 |
 | `roles/sol-verifier-high.toml` | `gpt-6.1-sol` / `high`，高难度验证 |
@@ -24,24 +25,26 @@ Lead Coordinator 在动手之前必须显式声明一个 `SELECTIVE ROUTE` 块�
 ```text
 SELECTIVE ROUTE
 mode: solo | delegate
-target_agent: none | sol_advisor_routine | sol_advisor_high
+target_agent: none | sol_advisor_routine | sol_advisor_standard | sol_advisor_high
 verifier_agent: none | sol_verifier_routine | sol_verifier_high
 reasoning_rationale: <为什么选这个难度>
 ```
 
-### 四种路由
+### 五种路由
 
 | 路由 | worker | 适用场景 |
 |------|--------|---------|
 | `solo` | 父会话自己实现 | 仅限微小、单文件、contained 编辑；验证仍必须委托 |
-| `delegate → sol_advisor_routine` | `gpt-6-luna` / `xhigh` | **默认**。标准实现、重构、单测、bugfix、API、feature |
-| `delegate → sol_advisor_high` | `gpt-6.1-sol` / `high` | **严格例外**。复杂数学/加密、微妙多线程并发、无既有模式的破坏性架构迁移 |
+| `delegate → sol_advisor_routine` | `gpt-6-luna` / `xhigh` | 低风险、明确且直接可验收的小任务 |
+| `delegate → sol_advisor_standard` | `gpt-6.1-terra` / `high` | **普通默认**：多文件功能、既有模式重构、中等难度调试 |
+| `delegate → sol_advisor_high` | `gpt-6.1-sol` / `high` | 未知根因跨系统、安全/权限、复杂并发、破坏性迁移、升级失败 |
 | `verifier_agent: none` | —— | 仅用于无实现变更、无验证门的任务 |
 
 ### 升级规则
-- 多文件范围、公共 API 变更、广泛爆炸半径、一般任务复杂度 **本身不** 构成升级到 `sol_advisor_high` 的理由。
-- 选 `sol_advisor_high` 时 `reasoning_rationale` 必须指出具体属于哪一条严格例外，并解释具体原因；否则回退到 routine（或 solo）。
-- verifier 选择独立于 worker：默认 `sol_verifier_routine`；`sol_verifier_high` 仅用于数学/加密、并发、金融对账、破坏性架构迁移，且需在 rationale 中点名具体例外。
+- 低风险明确任务 → routine；一般软件工程 → standard；高风险与跨系统未知根因 → high。仅文件数量多不足以升级 high。
+- routine 对同一缺陷定向修复一次后仍无进展 → standard；standard 再失败或识别严重风险 → high。
+- high 仍未解决，报告阻塞及缺证据，不得无上限重试。Verifier 仍是独立 gate；高风险选 high verifier。
+- 具体重试策略及长任务 checkpoint 见 verification-gate.md 和 docs/three-stage-implementation.md。
 
 ### Worker 委托契约（Section 2）
 每次 worker dispatch prompt **必须** 遵循以下结构：
@@ -66,7 +69,7 @@ VERIFICATION COMMANDS
 ~~~
 
 ### 内置角色禁用
-内置 advisor/reviewer 角色保持禁用；只允许上述四个具名角色。这避免模型选择回退到一个未受控的"reviewer"角色。
+内置 advisor/reviewer 角色保持禁用；只允许上述五个具名角色。这避免模型选择回退到一个未受控的"reviewer"角色。
 
 ## 工作流程
 

@@ -23,7 +23,7 @@
 | `scripts/review_windows.py` | Windows Job Object / 字节范围锁 / 进程身份 |
 | `tools/install.py` | 把本检出链接进 Codex home（POSIX symlink / Windows junction） |
 | `tools/sync.py` | 通过 SSH 把已配置远端检出快进到本地 HEAD |
-| `roles/*.toml` | 四个具名角色模板（routine/high × advisor/verifier） |
+| `roles/*.toml` | 五个具名角色模板（routine/high × advisor/verifier） |
 
 ## 核心概念
 
@@ -46,7 +46,7 @@
   ↓
 Lead Coordinator: 分类难度 (Section 1)
   ↓
-solo | delegate → sol_advisor_{routine,high}
+solo | delegate → sol_advisor_{routine,standard,high}
   ↓
 独立 verifier: sol_verifier_{routine,high}  ← Section 3 验证门
   ↓

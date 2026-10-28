@@ -14,43 +14,32 @@ External Claude review is disabled by default. The selected independent verifier
 
 ## 1. Task Difficulty Classification & Route Declaration
 
-Before using implementation tools, analyze the task's complexity, blast radius, and ambiguity, then declare the route:
+Before implementation, evaluate **boundedness, ambiguity, dependencies, safety impact, and testability**. Declare:
 
-```text
+\`\`\`text
 SELECTIVE ROUTE
 mode: solo | delegate
-target_agent: none | sol_advisor_routine | sol_advisor_high
+target_agent: none | sol_advisor_routine | sol_advisor_standard | sol_advisor_high
 verifier_agent: none | sol_verifier_routine | sol_verifier_high
-reasoning_rationale: <why this difficulty level was chosen>
-```
+reasoning_rationale: <concrete risk/complexity evidence and model selection>
+\`\`\`
 
-### Routing Rules:
-1. **`solo`**:
-   - Use only for minor, contained, single-file edits.
-   - Parent implements; independent checks MUST be delegated to the selected verifier under Section 3.
+### Routing rules (three implementation tiers)
 
-2. **`delegate -> sol_advisor_routine` (Default / Routine-First)**:
-   - **Model profile**: `gpt-6-luna` with `xhigh` reasoning, configured in `~/.codex/agents/sol-advisor-routine.toml`.
-   - **Default rule**: All standard implementation, refactoring, unit tests, bug fixes, API routes, and feature additions MUST default to this route, except minor, contained, single-file edits eligible for `solo` or work meeting one of the strict high-route exceptions below.
-   - Multi-file scope, public API changes, broad blast radius, or general task complexity alone MUST NOT justify escalation to `sol_advisor_high`.
+1. **solo**: minor contained single-file edits only. Parent may implement, but still delegates independent verification. Do not use solo to bypass verification.
+2. **sol_advisor_routine** — \`gpt-6-luna / xhigh\`: bounded tasks with clear ownership, settled interfaces and directly executable acceptance criteria; e.g. localized bug fix, unit tests, small route or CLI addition. Number of edited files is not an absolute limit.
+3. **sol_advisor_standard** — \`gpt-6.1-terra / high\` (**default for ordinary software engineering**): multi-file feature work, established API/DB contracts, nontrivial but patterned refactoring, moderate debugging and coordinated implementation/tests. Prefer standard if routine task boundaries are ambiguous or a first routine retry did not resolve the same defect.
+4. **sol_advisor_high** — \`gpt-6.1-sol / high\`: unknown root causes spanning interacting subsystems, security/privilege-sensitive paths, subtle concurrency or cryptography, high-impact architectural decisions, breaking migrations without settled patterns, or justified escalation after standard cannot locate/fix a defect. State the *specific* evidence; file count alone is insufficient.
+5. **Verifier selection is independent of worker tier**. Use \`sol_verifier_routine\` (\`gpt-6-luna / xhigh\`) for normal tests and scope validation. Use \`sol_verifier_high\` (\`gpt-6.1-sol / high\`) for security/privilege-sensitive changes, concurrency/cryptographic or financial invariants, breaking migrations, or other clearly identified high-risk invariants. Name the risk in the route. Both use fresh, read-only contexts.
+6. A missing/unavailable selected role is a **blocker**, not permission to silently switch models, run a review in the parent, or bypass independent verification. \`verifier_agent: none\` is allowed only if there are no implementation changes and no acceptance gate.
 
-3. **`delegate -> sol_advisor_high` (Strict Exception Only)**:
-   - **Model profile**: `gpt-6.1-sol`, configured in `~/.codex/agents/sol-advisor-high.toml`.
-   - **Use ONLY when**: Work involves complex mathematical/cryptographic algorithms, subtle multi-thread concurrency race conditions, or breaking architectural migrations with no existing codebase patterns.
-   - The route declaration MUST identify which of these exceptions applies and explain the concrete reason. Otherwise, use `sol_advisor_routine` (or `solo` for eligible minor edits).
-
-4. **Verifier selection (independent of worker selection)**:
-   - Default to `sol_verifier_routine`: `gpt-6-luna` with `xhigh` reasoning, configured in `~/.codex/agents/sol-verifier-routine.toml`.
-   - Use `sol_verifier_high` (`gpt-6.1-sol` with `high` reasoning, configured in `~/.codex/agents/sol-verifier-high.toml`) ONLY for complex mathematical/cryptographic algorithms, subtle multi-thread concurrency race conditions, financial settlement reconciliations, or breaking architectural migrations with no existing codebase patterns. Name the concrete exception in `reasoning_rationale`; broad scope alone is insufficient.
-   - Select a verifier for both `solo` and `delegate` implementation routes. `verifier_agent: none` is reserved for tasks with no implementation changes and no verification gate.
-
-*(Note: Built-in advisor/reviewer roles remain disabled; the named worker and verifier roles above are explicitly permitted. Independent verifier checks are the default and sufficient acceptance gate. External Claude review is optional and runs only for an invocation with the explicit first-argument opt-in described above.)*
+Built-in advisor/reviewer roles remain disabled unless expressly configured outside this skill. The five named roles above are allowed; do not add mandatory review passes. External Claude review remains strictly opt-in.
 
 ---
 
 ## 2. Worker Delegation Contract (Spawn & Dispatch)
 
-When delegating, spawn the selected agent (`sol_advisor_routine` or `sol_advisor_high`) with a fresh context.
+When delegating, spawn the selected agent (`sol_advisor_routine`, `sol_advisor_standard` or `sol_advisor_high`) with a fresh context.
 
 Every worker dispatch prompt **MUST** follow this structured specification:
 
@@ -122,7 +111,7 @@ cat <<'EOF' | bash "$claude_reviewer" --claude-review final --detach \
   --thread-id "$CODEX_THREAD_ID" --eta-seconds 900
 REVIEW MODE: final
 USER OBJECTIVE: <what was requested>
-ROUTED WORKER: <sol_advisor_routine or sol_advisor_high>
+ROUTED WORKER: <sol_advisor_routine, sol_advisor_standard or sol_advisor_high>
 FILES MODIFIED: <changed file scope>
 PARENT VERIFICATION EVIDENCE: <verifier's concise results and exit codes>
 REVIEW REQUEST: Independently inspect the Git changes and surrounding code for defects and contract violations.

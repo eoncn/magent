@@ -10,7 +10,7 @@
 - `SKILL.md`：技能入口和路由、内外审核规则。
 - `scripts/`：跨平台审核实现及离线回归测试。
 - `references/external-review.md`：审核参数、状态和回调协议。
-- `roles/`：从 home-server 收录的四份 worker/verifier 配置模板。
+- `roles/`：从 home-server 收录的五份 worker/verifier 配置模板。
 - `tools/install.py`：将同一台机器的技能入口链接到本仓库。
 - `tools/sync.py`：通过免密 SSH 更新已配置好的远端 Git 检出。
 
@@ -36,10 +36,12 @@ python3 tools/install.py
 同一次安装出错会回滚已替换入口。重复安装不会重复备份正确链接。
 自定义安装位置可以重复指定 `--home /path/to/codex-home`。
 
-`roles/` 保留四个具名角色及其模型配置。若目标机器缺少这些配置，可运行
+`roles/` 保留五个具名角色及其模型配置。若目标机器缺少这些配置，可运行
 `python3 tools/install.py --roles` 安装模板；旧文件同样备份。
 角色注册沿用每台机器现有的 agent 配置机制；安装器不改写 `config.toml`。
-在启用新版技能前，确认 `sol_advisor_routine`、`sol_advisor_high`、
+新模型：`sol_advisor_standard` = `gpt-6.1-terra` / `high`；已有四个角色保留。
+请使用 `python3 tools/check_role_registration.py --home ~/.codex` 检查文件和手动注册结果。
+在启用新版技能前，确认 `sol_advisor_routine`、`sol_advisor_standard`、`sol_advisor_high`、
 `sol_verifier_routine`、`sol_verifier_high` 都可由当前 Codex 环境调用。
 
 审核日志、会话和回调状态保存在 Codex home，路径和凭据通过本机环境变量提供。
