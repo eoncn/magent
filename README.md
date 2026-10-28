@@ -88,6 +88,10 @@ python3 tools/analyze_terra_trial.py ../terra-trial-results.csv --out ../terra-t
 
 环境隔离工具不复制登录凭据、不启动模型请求。试验并不改动现有 roles 模板、SKILL.md 或 CCB。资料在 `docs/terra-trial-*-template.csv`；模型实际运行、子 Agent 路由和验收需本机执行，并按真实记录填写 CSV。**不得提前声明性能提升。**
 
+## Terra 定向实验的先行结论（2026-10-28）
+
+用户本地已完成 **2 对/4 次**自然 standard Worker 任务对照，两个模型均 **2/2 独立验收 PASS**；T04 两臂各一次定向返工，Terra 中断记录完整保留但 Token 聚合缺失，**不能声称任何速度或费用优化收益**。原计划 4 对未全部执行，现无需强行补跑。正式参数和 CCB/Verifier 配置保持不变，详见 [先行实验复盘](docs/terra-trial-evaluation-2026-10-28.md)。
+
 ## 离线验证
 
 从本目录执行，CCB 和 Codex queue 均使用模拟命令，不发送模型请求或真实回调：
