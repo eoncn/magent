@@ -5,7 +5,7 @@
 它不是另一个 Codex 客户端，也不是自动执行任务的后台服务；安装后通过 Codex 中的 `$magent` 技能指令使用。外部 Claude/CCB 审核是**显式可选**功能，默认关闭。
 
 - [快速安装到 Codex](#快速安装到-codex)
-- [手动注册五个 Agent 角色](#手动注册五个-agent-角色必须)
+- [自动注册 Agent 与配置校验](#自动注册-agent-与配置校验)
 - [检查安装并开始使用](#检查安装并开始使用)
 - [运行机制与模型分工](#运行机制与模型分工)
 - [维护、恢复与可选审核](#维护恢复与可选审核)
@@ -53,11 +53,11 @@
 
 - 已安装并能正常登录 **Codex CLI**，且当前版本支持 Skill 和具名子 Agent。
 - 已安装 **Git**。
-- **macOS / Linux**：Python 3.9+。
+- **macOS / Linux**：推荐 Python 3.11+（自带 TOML 解析器）。Python 3.9/3.10 需先安装 `tomli`：`python3 -m pip install tomli`，才能安全自动注册 Agent。
 - **Windows**：推荐 Windows 11 + 原生 CPython 3.12+；普通安装不需要 Git Bash，只有使用可选 CCB 审核时才需要 Git Bash。
 - 使用上表中模型的账户或 provider 权限。安装程序不会替你获得模型访问权限。
 
-安装分为 **① 克隆仓库 → ② 安装 Skill 和角色文件 → ③ 注册 Agent 到 Codex 配置 → ④ 验证**。只完成第 ② 步还不能保证具名 Agent 可以被调用。
+**默认一条安装命令完成三项操作**：创建 Skill 链接、复制五个 Agent 模板、自动注册到 Codex `config.toml`，然后执行只读的配置检查。不会要求手动复制五段 TOML，安装程序也不会检查或改写登录凭据。首次使用仍需确认模型访问权限与 Codex CLI 能力。
 
 ### macOS / Linux
 
@@ -68,18 +68,18 @@ mkdir -p "$HOME/otherWorks"
 git clone https://github.com/eoncn/magent.git "$HOME/otherWorks/magent"
 cd "$HOME/otherWorks/magent"
 
-# 先预览将新增或备份的文件
-python3 tools/install.py --home "$HOME/.codex" --roles --dry-run
+# 预览 Skill、Agent 和 config.toml 的变更，不实际写文件
+python3 tools/install.py --home "$HOME/.codex" --dry-run
 
-# 安装 Skill 链接 + 五个 Agent 角色模板
-python3 tools/install.py --home "$HOME/.codex" --roles
+# 一键安装：Skill 链接 + 5 个角色模板 + 自动注册 config.toml
+python3 tools/install.py --home "$HOME/.codex"
 ```
 
 安装后的主要位置：
 
 ```text
 ~/.codex/
-├── config.toml                 # 下一节手动注册角色
+├── config.toml                 # 安装器自动追加五个角色注册段
 ├── skills/
 │   └── magent/                 # 指向 git clone 的仓库（符号链接）
 └── agents/
@@ -99,8 +99,8 @@ New-Item -ItemType Directory -Force "$HOME\otherWorks" | Out-Null
 git clone https://github.com/eoncn/magent.git "$HOME\otherWorks\magent"
 Set-Location "$HOME\otherWorks\magent"
 
-py -3 tools/install.py --home "$HOME\.codex" --roles --dry-run
-py -3 tools/install.py --home "$HOME\.codex" --roles
+py -3 tools/install.py --home "$HOME\.codex" --dry-run
+py -3 tools/install.py --home "$HOME\.codex"
 ```
 
 Codex 用户目录通常是 `%USERPROFILE%\.codex`（PowerShell 中为 `$HOME\.codex`）。
@@ -110,22 +110,18 @@ Codex 用户目录通常是 `%USERPROFILE%\.codex`（PowerShell 中为 `$HOME\.c
 上面仅安装到常用的 `~/.codex`，不会自动安装到其他自定义 `CODEX_HOME`。如果有第二套 Codex，可指定多个目录：
 
 ```bash
-python3 tools/install.py --home "$HOME/.codex" --home "$HOME/.codex-us" --roles
+python3 tools/install.py --home "$HOME/.codex" --home "$HOME/.codex-us"
 ```
 
-省略全部 `--home` 时，安装器默认处理 `~/.codex` 和 `~/.codex-us`。它会对原有目标创建带时间戳的备份，安装失败则回滚本轮已替换内容；**不是无条件覆盖后不留备份**。
+省略全部 `--home` 时，安装器默认处理 `~/.codex` 和 `~/.codex-us`。它会在写入前校验现有 TOML 与角色冲突，更新时对原文件创建带时间戳的备份，失败时回滚本轮已替换内容；**不会清空或重写你的 provider、审批、模型、MCP 或其他自定义设置**。
 
-## 手动注册五个 Agent 角色（必须）
+> 如果已有同名角色指向非 magent 路径，或者配置 TOML 格式错误、显式禁用多 Agent、`config.toml` 是符号链接，脚本会报告原因并停止，**不会擅自覆盖**。处理冲突后重新执行即可。
 
-安装器会安装 `SKILL.md` 和复制 `roles/*.toml`，但**不会自动修改 `config.toml`**。这是安装完成后最容易遗漏的一步。
+## 自动注册 Agent 与配置校验
 
-打开你本机 Codex 配置文件：
+安装器已经替你在目标 Codex Home 的 `config.toml` 末尾**仅追加缺少的注册段落**。原有正确配置保留原样，重复安装不重复写入；对有冲突的同名 Agent **不自动修复或覆盖**，防止破坏已有项目配置。已有文件发生替换时，旧版本保存在 `<codex-home>/magent-install-backups/<时间戳>/`，中途失败会尝试自动回滚本次安装。
 
-- macOS/Linux：`~/.codex/config.toml`
-- Windows：`$HOME\.codex\config.toml`
-- 自定义 Codex Home：对应目录下的 `config.toml`
-
-**保留原文件中的 provider、主模型、沙箱、审批策略及其他设置**。如果没有以下角色段落，将其追加到文件中；如果已经有同名段落，请合并，不要重复声明 TOML 表。
+正常情况下**无需手动编辑**。脚本写入的五个注册段落如下，仅用于故障排查或高级用户参考：
 
 ```toml
 [agents.sol_advisor_routine]
@@ -144,7 +140,17 @@ config_file = "agents/sol-verifier-routine.toml"
 config_file = "agents/sol-verifier-high.toml"
 ```
 
-相对 `config_file` 路径按声明该角色的 `config.toml` 所在目录解析。Codex 多 Agent 工具通常默认启用；如果你先前设置过 `agents.enabled = false`，需要在原有 `[agents]` 表里将其设为 `true`。不要为此额外创建第二个重复的 `[agents]` 表。参考 [Codex 子 Agent 配置说明](https://learn.chatgpt.com/docs/agent-configuration/subagents)。
+**安装参数说明：**
+
+| 参数 | 效果 |
+| --- | --- |
+| `--home <目录>` | 指定 Codex Home，可重复传入；默认同时使用 `~/.codex` 与 `~/.codex-us` |
+| `--dry-run` | 只预览变更和冲突，不创建任何文件 |
+| `--roles` | 兼容旧命令；新版本默认就会安装五个角色和注册配置 |
+| `--no-register` | 安装 Skill 和五个角色文件，**不修改** `config.toml`，供已有特殊注册方案使用 |
+| `--skill-only` | 仅安装 Skill 链接，保持早期版本的纯链接行为 |
+
+如果自动安装提示角色冲突，应先查看报错中现有 `config_file` 的位置，不要直接覆盖自己长期维护的角色配置；确认后可手动消除冲突再重试。若你管理的 `config.toml` 是指向 dotfiles 的符号链接，可使用 `--no-register`，在实际配置源文件中自行维护注册条目。
 
 ### 检查安装并开始使用
 
@@ -214,13 +220,13 @@ $magent --claude-review 修复当前问题并完成独立审核
 
 ### 更新与维护
 
-由于 Skill 入口是指向克隆目录的链接，拉取最新代码即可更新 `SKILL.md` 等源码；**角色 TOML 是复制的文件**，升级角色模板时需要重新运行 `install.py --roles`（会先备份已有内容）。
+由于 Skill 入口是指向克隆目录的链接，拉取最新代码即可更新 `SKILL.md` 等源码；**角色 TOML 是复制的文件**，升级角色模板时需要重新运行 `install.py`，安装器会同时检查并补齐缺失的注册信息（已有有效配置不变）。
 
 ```bash
 cd "$HOME/otherWorks/magent"
 git pull --ff-only
-python3 tools/install.py --home "$HOME/.codex" --roles --dry-run
-python3 tools/install.py --home "$HOME/.codex" --roles
+python3 tools/install.py --home "$HOME/.codex" --dry-run
+python3 tools/install.py --home "$HOME/.codex"
 python3 tools/check_role_registration.py --home "$HOME/.codex"
 ```
 
@@ -234,6 +240,7 @@ Windows 将 `python3` 改为 `py -3`、路径改为本机路径。不要在 CCB 
 
 ```bash
 python3 tools/test_maintenance.py
+python3 tools/test_auto_install.py
 python3 tools/test_skill_config.py
 python3 scripts/test_task_state.py
 python3 tools/test_stage3_analyzer.py
@@ -250,7 +257,8 @@ python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | Codex Skill 入口、派发规范、验收门与有界升级规则 |
 | [`roles/`](roles/) | 五个具名 Worker/Verifier TOML 角色模板 |
-| [`tools/install.py`](tools/install.py) | 安装 Skill 链接与角色文件，支持备份/回滚 |
+| [`tools/install.py`](tools/install.py) | 一键安装 Skill、五个角色和 `config.toml` 注册，支持备份/回滚 |
+| [`tools/register_agents.py`](tools/register_agents.py) | 安全 TOML 注册规划，校验既有配置，禁止覆盖角色冲突 |
 | [`tools/check_role_registration.py`](tools/check_role_registration.py) | 只读检查角色配置和注册 |
 | [`scripts/task_state.py`](scripts/task_state.py) | 可恢复长任务的状态检查点 |
 | [`scripts/`](scripts/) / [`references/`](references/) | 可选 CCB 外部审核、持久会话和回调协议 |

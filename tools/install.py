@@ -6,8 +6,12 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import sys
 import uuid
+
+from register_agents import registration_update
+from check_role_registration import EXPECTED, validate
 
 SOURCE = Path(__file__).resolve().parents[1]
 
@@ -34,7 +38,10 @@ def remove_entry(path):
         shutil.rmtree(path)
 
 
-def install(homes, include_roles=False, dry_run=False):
+def install(homes, include_roles=False, dry_run=False, register_agents=False):
+    if register_agents and not include_roles:
+        raise ValueError("Role registration requires role installation")
+    roles = {name: template[0] for name, template in EXPECTED.items()}
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     entries = []
     homes = list(dict.fromkeys(p.expanduser().absolute() for p in homes))
@@ -50,12 +57,21 @@ def install(homes, include_roles=False, dry_run=False):
         if not continue_skill:
             entries.append((target, SOURCE, "directory", home))
         if include_roles:
-            for role in sorted((SOURCE / "roles").glob("*.toml")):
-                target = home / "agents" / role.name
+            for name, filename in roles.items():
+                role = SOURCE / "roles" / filename
+                if not role.is_file():
+                    raise ValueError("Missing managed role template: " + str(role))
+                target = home / "agents" / filename
                 if target.is_file() and target.read_bytes() == role.read_bytes():
                     continue
                 entries.append((target, role, "file", home))
-    report = [{"target": str(t), "source": str(s), "kind": kind} for t, s, kind, _ in entries]
+        if register_agents:
+            new_config, added = registration_update(home, roles)
+            if new_config is not None:
+                entries.append((home / "config.toml", new_config, "config", home))
+    report = [{"target": str(t),
+               "source": "<generated role registrations>" if kind == "config" else str(src),
+               "kind": kind} for t, src, kind, _ in entries]
     if dry_run:
         return {"dry_run": True, "changes": report}
     completed = []
@@ -67,6 +83,12 @@ def install(homes, include_roles=False, dry_run=False):
             pending = temporary
             if kind == "directory":
                 link_directory(source, temporary)
+            elif kind == "config":
+                temporary.write_bytes(source)
+                # Preserve existing config mode; new configs should be private.
+                mode = stat.S_IMODE(target.stat().st_mode) if target.exists() else 0o600
+                if os.name != "nt":
+                    temporary.chmod(mode)
             else:
                 shutil.copyfile(source, temporary)
             backup = None
@@ -77,6 +99,12 @@ def install(homes, include_roles=False, dry_run=False):
             completed.append((target, backup))
             os.replace(temporary, target)
             pending = None
+        if register_agents:
+            for home in homes:
+                errors = validate(home)
+                if errors:
+                    raise ValueError("Post-install role verification failed in "
+                                     + str(home) + ": " + "; ".join(errors))
         return {"dry_run": False, "changes": report,
                 "backups": [str(b) for _, b in completed if b is not None]}
     except BaseException:
@@ -94,14 +122,26 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--home", action="append", type=Path,
                         help="Codex home; repeatable, defaults to ~/.codex and ~/.codex-us")
-    parser.add_argument("--roles", action="store_true", help="also install the five role templates; leaves config.toml untouched")
+    parser.add_argument("--roles", action="store_true",
+                        help="compatibility flag (roles are installed by default)")
+    parser.add_argument("--skill-only", action="store_true",
+                        help="legacy link-only installation; do not install/register roles")
+    parser.add_argument("--no-register", action="store_true",
+                        help="install Skill and role templates without editing config.toml")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not (SOURCE / "SKILL.md").is_file():
         parser.error("source skill is missing")
+    if args.skill_only and args.roles:
+        parser.error("--skill-only conflicts with --roles")
+    if args.skill_only and args.no_register:
+        parser.error("--no-register is already implied by --skill-only")
     homes = args.home or [Path.home() / ".codex", Path.home() / ".codex-us"]
     try:
-        print(json.dumps(install(homes, args.roles, args.dry_run), ensure_ascii=True, indent=2))
+        print(json.dumps(install(homes, include_roles=not args.skill_only,
+                                 dry_run=args.dry_run,
+                                 register_agents=not args.skill_only and not args.no_register),
+                         ensure_ascii=True, indent=2))
     except (OSError, ValueError) as error:
         print("Installation failed: " + str(error), file=sys.stderr)
         return 1

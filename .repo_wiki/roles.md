@@ -6,7 +6,7 @@
 
 `roles/` 下五个 TOML 文件是 Codex agent 配置模板。`SKILL.md` 的路由规则按名字引用它们；`tools/install.py --roles` 把它们复制到 `<codex-home>/agents/`。既有四个角色带 `sol-*-managed:v1`，新增标准角色带 `sol-advisor-managed:v2` 标记，便于将来批量升级或检测漂移。
 
-角色注册依赖目标机器现有的 agent 配置机制；安装器 **不** 改写 `config.toml`。启用技能前需确认 Codex 环境能调用全部五个角色名。
+CLI 安装器默认把五个角色写入目标 Codex Home 的 `agents/` 并向 `config.toml` 安全补齐缺失的角色注册；既有设置、注释和正确注册保持原样，冲突则拒绝并报告。可通过 `--no-register` 不改写配置；启用技能前仍需确认 Codex 环境能调用全部五个角色名。
 
 ## 关键文件
 
@@ -71,4 +71,4 @@ Codex 加载 <codex-home>/agents/<角色名>.toml
 ---
 
 **相关页面**: [skill-routing.md](skill-routing.md) | [verification-gate.md](verification-gate.md) | [install-sync.md](install-sync.md) | [overview.md](overview.md)
-> 安装器复制角色文件但不注册 config.toml。运行 `python3 tools/check_role_registration.py --home ~/.codex` 检测注册缺项；绝不自动编辑用户配置。
+> 安装器默认复制并注册角色文件。运行 `python3 tools/check_role_registration.py --home ~/.codex` 检测注册缺项；绝不自动编辑用户配置。

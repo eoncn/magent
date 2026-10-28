@@ -14,11 +14,13 @@ All commands run from the repo root unless noted. Python 3.9+ required; Windows 
 
 ### Install (link this checkout into local Codex homes)
 ```bash
-python3 tools/install.py --dry-run     # preview
-python3 tools/install.py               # link ~/.codex/skills/magent and ~/.codex-us/skills/magent
-python3 tools/install.py --roles       # also copy the five role templates; never edits config.toml
+python3 tools/install.py --home ~/.codex --dry-run   # preview skill/roles/config updates
+python3 tools/install.py --home ~/.codex              # one-step install + role auto-registration
+python3 tools/check_role_registration.py --home ~/.codex
+python3 tools/install.py --home ~/.codex --no-register  # opt out of config edits
+python3 tools/install.py --skill-only                  # legacy skill link only
 ```
-POSIX uses symlinks; Windows uses CPython junctions (no symlink privilege needed). Old entries are moved to `magent-install-backups/<stamp>/...`; failed runs roll back. Idempotent on already-correct links.
+POSIX uses symlinks; Windows uses CPython junctions (no symlink privilege needed). Old entries are moved to `magent-install-backups/<stamp>/...`; failed runs roll back. By default the installer copies five role templates, safely appends only missing `[agents.<name>]` registrations to `config.toml`, and validates the installed setup. Pre-existing provider/model/approval/sandbox/MCP config is preserved. Conflicting registration, malformed TOML or explicitly disabled multi-agent is rejected before modification; no silent override. Python 3.11+ supplies tomllib, older Python needs `tomli` for automatic registration. Idempotent on already-correct links and registrations.
 
 ### Sync (fast-forward remote checkouts over SSH)
 ```bash
@@ -30,6 +32,7 @@ Requires clean local and remote worktrees. Pulls via upstream, fast-forward only
 ### Offline tests (no model requests, no real callbacks, mocked CCB/queue)
 ```bash
 python3 tools/test_maintenance.py
+python3 tools/test_auto_install.py
 python3 tools/test_skill_config.py
 python3 scripts/test_task_state.py
 python3 scripts/test_review_runner.py
@@ -69,10 +72,10 @@ Five managed role templates with model profiles:
 - `sol-verifier-routine.toml`: `gpt-6-luna` / `xhigh`
 - `sol-verifier-high.toml`: `gpt-6.1-sol` / `high`
 
-Legacy four templates retain `sol-*-managed:v1`; the standard template uses `sol-advisor-managed:v2`. Installation with `--roles` copies them into `<codex-home>/agents/`; the installer never rewrites `config.toml`. Before enabling the skill on a target machine, confirm the Codex environment can invoke all five role names.
+Legacy four templates retain `sol-*-managed:v1`; the standard template uses `sol-advisor-managed:v2`. CLI installation now copies all five role templates into `<codex-home>/agents/` and appends missing role registration tables to `<codex-home>/config.toml` by default, preserving unrelated settings. `--no-register` retains the old manual-registration behavior, and `--skill-only` installs only the link. `tools/register_agents.py` uses a TOML parser for fail-closed planning; `tools/check_role_registration.py` validates after installation. Automatic registration does not prove model entitlement or runtime dispatch.
 
 ### Install / sync model
-`tools/install.py` links each Codex home's `skills/magent` to this checkout (POSIX symlink, Windows junction via `_winapi.CreateJunction`). Refuses to install when the source already lives inside the target. Backups go to `<codex-home>/magent-install-backups/<stamp>/...`. Atomic per entry; on failure, completed replacements are rolled back.
+`tools/install.py` links each Codex home's `skills/magent` to this checkout (POSIX symlink, Windows junction via `_winapi.CreateJunction`). Refuses to install when the source already lives inside the target. Backups go to `<codex-home>/magent-install-backups/<stamp>/...`. Atomic per entry; on failure, completed replacements (including config.toml) are rolled back. All target config files are preflight-checked before any writes. Repeated installation is idempotent.
 
 `tools/sync.py` ships a Python program to each host over SSH via stdin (user data never interpolated into the SSH command). Each host verifies it is the repo root, has a clean worktree, has an upstream, and that upstream HEAD matches the source commit; then `git fetch` + `merge --ff-only`. `--install` re-links the remote checkout into that host's Codex homes.
 

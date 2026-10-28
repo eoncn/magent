@@ -4,7 +4,7 @@
 
 ## 概述
 
-`magent` 是技能目录，安装就是让 `~/.codex/skills/magent` 指向本仓库。POSIX 用 symlink，Windows 用 junction（CPython `_winapi.CreateJunction`，无需开发者模式或符号链接权限）。`install.py` 默认链接 `~/.codex` 和 `~/.codex-us` 两个 Codex home，可选 `--roles` 同时复制四个角色模板到 `<home>/agents/`。旧入口备份到 `<home>/magent-install-backups/<stamp>/...`，失败自动回滚。
+`magent` 是技能目录，安装就是让 `~/.codex/skills/magent` 指向本仓库。POSIX 用 symlink，Windows 用 junction（CPython `_winapi.CreateJunction`，无需开发者模式或符号链接权限）。`install.py` 默认链接 `~/.codex` 和 `~/.codex-us` 两个 Codex home，默认将五个角色模板复制到 `<home>/agents/`，并自动注册到 `<home>/config.toml`；`--no-register` 禁止改写注册，`--skill-only` 只创建技能链接。旧入口备份到 `<home>/magent-install-backups/<stamp>/...`，失败自动回滚。
 
 `sync.py` 不克隆、不提交、不推送。它通过免密 SSH 在每个远端主机上执行一段内嵌 Python：验证远端是仓库根、工作树干净、有 upstream、upstream HEAD 等于本地 HEAD，然后 `git fetch + merge --ff-only`。`--install` 在远端再跑一次 `install.py` 把检出链接进远端的 Codex home。
 
@@ -15,7 +15,10 @@
 | `tools/install.py` | 链接本检出到 Codex home，含备份/回滚 |
 | `tools/sync.py` | SSH 快进远端检出，可选 `--install` |
 | `tools/test_maintenance.py` | 安装/回滚/同步/共享检出状态回归测试 |
-| `roles/*.toml` | 四个角色模板（`--roles` 时复制） |
+| `roles/*.toml` | 五个角色模板（默认安装） |
+| `tools/register_agents.py` | 安全 TOML 分析及缺失角色的自动注册规划 |
+| `tools/check_role_registration.py` | 自动安装后的只读验证 |
+| `tools/test_auto_install.py` | 一键安装、冲突保护、幂等及跨 Home 回滚测试 |
 
 ## 核心概念
 
@@ -23,10 +26,12 @@
 
 #### 命令
 ```bash
-python3 tools/install.py --dry-run       # 预览
-python3 tools/install.py                 # 链接 ~/.codex 与 ~/.codex-us
-python3 tools/install.py --home /path    # 自定义 home，可重复
-python3 tools/install.py --roles         # 同时复制角色模板
+python3 tools/install.py --home ~/.codex --dry-run  # 预览 Skill/角色/配置改动
+python3 tools/install.py --home ~/.codex            # 一键安装、注册和验证
+python3 tools/install.py                            # 默认同时安装 ~/.codex 和 ~/.codex-us
+python3 tools/install.py --no-register              # 复制角色但保持原 config.toml
+python3 tools/install.py --skill-only                # 旧版纯链接安装
+python3 tools/install.py --roles                    # 兼容旧选项，已是默认行为
 ```
 
 #### 安装步骤
@@ -35,15 +40,17 @@ python3 tools/install.py --roles         # 同时复制角色模板
    - `target = home / "skills/magent"`。
    - 若 `SOURCE.is_relative_to(target.resolve())`：源已在目标内。若已正确链接 → 跳过；否则报错（拒绝把源装进自己）。
    - 否则加入 entries。
-   - `--roles`：对 `roles/*.toml` 每个文件，若 `<home>/agents/<name>` 内容相同 → 跳过；否则加入 entries。
-3. `--dry-run`：返回 changes 列表，不创建任何目录。
-4. 执行：对每个 entry：
+   - 角色复制（默认，`--skill-only` 时跳过）：对 `roles/*.toml` 每个文件，若 `<home>/agents/<name>` 内容相同 → 跳过；否则加入 entries。
+3. 如果启用自动注册（默认），先调用 `register_agents.registration_update()` 读取现有 config.toml，用 tomllib / tomli 解析并检查同名角色是否冲突、agents 是否明确关闭、是否配置软链接。仅为缺失条目**附加**标准 TOML 表，不修改原设置，先解析生成内容保证没有 TOML 冲突。
+4. `--dry-run`：返回 changes 列表，不创建任何目录。
+5. 执行：对每个 entry：
    - `target.parent.mkdir(parents=True, exist_ok=True)`。
    - `temporary = target.with_name("." + target.name + "." + uuid + ".tmp")`。
    - directory → `link_directory(source, temporary)`；file → `shutil.copyfile`。
    - 若 `os.path.lexists(target)`：备份到 `<home>/magent-install-backups/<stamp>/<relative>`，`os.replace(target, backup)`。
    - `os.replace(temporary, target)`。
-5. 失败：清理 pending temporary；对已完成的反向恢复（删新链接、`os.replace(backup, target)`）。
+6. 全部写入后运行 `check_role_registration.validate()`，必须五个角色都有效，否则视为失败。
+7. 失败：清理 pending temporary；对已完成的反向恢复（删新链接、`os.replace(backup, target)`）。
 
 #### link_directory
 - POSIX：`link.symlink_to(target, target_is_directory=True)`。
@@ -59,7 +66,9 @@ python3 tools/install.py --roles         # 同时复制角色模板
 - `stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]`。
 - 备份位置：`<home>/magent-install-backups/<stamp>/<target.relative_to(home)>`。
 - 同一次安装出错回滚已替换入口；重复安装不会重复备份正确链接。
-- `--roles` 复制的角色文件若字节相同则跳过，避免无意义备份。
+- 角色文件若字节相同则跳过，配置注册已有正确表也直接跳过，避免无意义备份。
+- `config.toml` 存在时沿用原文件 mode，首次创建设置 0600（POSIX）；原文件替换前备份，失败会回滚本轮改动；配置软链接不会被替换。
+- 自动注册依赖 Python 3.11+ 的 tomllib 或在 3.9/3.10 安装 tomli。工具不会自动安装依赖、清空配置或覆盖同名角色的自定义 config_file。
 
 ### sync.py
 
@@ -113,7 +122,9 @@ python3 tools/sync.py --host A --host B --install    # 快进 + 链接
 | 参数 | 说明 |
 |------|------|
 | `install.py --home` | Codex home，可重复，默认 `~/.codex` + `~/.codex-us` |
-| `install.py --roles` | 同时复制角色模板 |
+| `install.py --roles` | 兼容参数（默认已经复制角色模板并注册） |
+| `install.py --no-register` | 安装 Skill/角色，但保留当前 config.toml 不动 |
+| `install.py --skill-only` | 只创建 Skill 链接 |
 | `install.py --dry-run` | 预览 |
 | `sync.py --host` | SSH alias，可重复 |
 | `sync.py --path` | 远端检出路径，默认 `~/otherWorks/magent` |
@@ -122,8 +133,9 @@ python3 tools/sync.py --host A --host B --install    # 快进 + 链接
 
 ## 注意事项
 
-- `install.py` 不修改 `config.toml`；角色注册依赖目标机器现有的 agent 配置机制。
-- 安装前确认 `sol_advisor_routine/sol_advisor_high/sol_verifier_routine/sol_verifier_high` 都能被当前 Codex 环境调用。
+- `install.py` 默认给 `config.toml` 安全追加缺失的五个注册段，但不会覆写用户的 provider/审批/沙箱/MCP 等设置；冲突与非法 TOML 会中止安装。
+- 确实不希望自动注册时使用 `--no-register`；原始文件如为软链接也必须用此模式再编辑其真实源。
+- 安装后运行 `python3 tools/check_role_registration.py --home ~/.codex`，并实际确认五个角色有模型访问权限，配置检查本身不调用真实模型。
 - `sync.py` 要求本地与远端工作树都干净；远端有未提交修改 → 停止。
 - `sync.py` 不自动克隆、提交、推送或覆盖本地修改；只快进到本地 HEAD 对应的同一提交。
 - `sync.py` 要求 upstream 已包含本地 HEAD：先 `git push` 再 sync。

@@ -47,6 +47,7 @@
 ## 测试入口
 ```bash
 python3 tools/test_maintenance.py
+python3 tools/test_auto_install.py
 python3 tools/test_skill_config.py
 python3 scripts/test_task_state.py
 python3 tools/test_stage3_analyzer.py
@@ -85,3 +86,7 @@ test_sync_review: FAKE_CCB + POSIX 夹具 → 跑同步审核 → 断言 envelop
 - `tools/analyze_terra_trial.py`：检查成对基线、prompt hash、自然 standard 路由、实际 standard Worker 调用、对应模型/verifier pin，排除环境与配置失败，统计质量/时间/Token。
 - `python3 tools/test_terra_trial.py`：仅离线检验以上工具，不代表真实 Codex 功能测试已通过。
 - 实验结果回交后才能评估是否微调标准路由；本轮不修改 CCB / `SKILL.md` / Verifier 参数。
+
+## 自动注册安装验证（2026-10）
+
+`tools/test_auto_install.py` 是离线单元测试，不调用 Codex 或真实模型；覆盖自动注册五个角色、原有 provider/审批和注释保留、BOM/CRLF、再次执行幂等、无效 TOML 或同名冲突预防、显式禁用拒绝、配置软链接保护、多 Home 预检查以及中间失败或安装后校验失败时的回滚。注册模块使用 Python 3.11+ `tomllib` 或可选 `tomli`。上线操作仍需实际使用 `tools/check_role_registration.py` 校验并确认具名模型能派发。
