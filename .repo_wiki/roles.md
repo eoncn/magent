@@ -4,7 +4,7 @@
 
 ## 概述
 
-`roles/` 下五个 TOML 文件是 Codex agent 配置模板。`SKILL.md` 的路由规则按名字引用它们；`tools/install.py --roles` 把它们复制到 `<codex-home>/agents/`。既有四个角色带 `sol-*-managed:v1`，新增标准角色带 `sol-advisor-managed:v2` 标记，便于将来批量升级或检测漂移。
+`roles/` 下五个 TOML 文件是 Codex agent 配置模板。`SKILL.md` 的路由规则按名字引用它们；`tools/install.py --roles` 把它们复制到 `<codex-home>/agents/`。routine advisor/verifier 与 high advisor 带 `sol-*-managed:v1`；standard advisor 带 `sol-advisor-managed:v2`；high verifier 补充安全/权限审计职责后升为 `sol-verifier-managed:v2`，便于将来批量升级或检测漂移。
 
 CLI 安装器默认把五个角色写入目标 Codex Home 的 `agents/` 并向 `config.toml` 安全补齐缺失的角色注册；既有设置、注释和正确注册保持原样，冲突则拒绝并报告。可通过 `--no-register` 不改写配置；启用技能前仍需确认 Codex 环境能调用全部五个角色名。
 
@@ -64,7 +64,7 @@ Codex 加载 <codex-home>/agents/<角色名>.toml
 - 安装器只 **复制** 模板到 `<home>/agents/`；不修改 `config.toml`，不注册角色。注册依赖目标机器的 Codex 配置。
 - 若目标机器已有同名文件且字节相同 → 跳过，避免无意义备份。
 - 旧文件同样备份到 `<home>/magent-install-backups/<stamp>/agents/<name>`。
-- `sol-*-managed:v1` / `sol-advisor-managed:v2` 注释行是版本标记，便于将来检测模板漂移。
+- `sol-*-managed:v1` / `sol-*-managed:v2` 注释行是版本标记，便于将来检测模板漂移。
 - high 角色的 `model_reasoning_effort` 是 `high` 而非 `xhigh`：high 模型本身能力更强，reasoning effort 适度即可；routine 模型用 `xhigh` 补偿。
 - 修改这些模板会直接影响所有使用该角色的调用；改前考虑版本号或向后兼容。
 

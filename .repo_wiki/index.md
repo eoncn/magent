@@ -25,11 +25,11 @@
 
 - [cross-platform.md](cross-platform.md) — Windows Job Object / 字节范围锁 / Git Bash / MSYS 参数转换 / junction
 - [install-sync.md](install-sync.md) — `tools/install.py` 链接 Codex home + `tools/sync.py` SSH 快进远端
-- [testing.md](testing.md) — 三套离线测试：maintenance / review_runner / sync_review
+- [testing.md](testing.md) — 离线测试：maintenance / auto_install / skill_config / task_state / stage3_analyzer / review_runner / sync_review
 
 ## 元数据
 
 - 生成时间：2026-10-26
 - 页面数量：12（不含本索引与 log）
 - 源仓库：`/home/eoncn/otherWorks/magent`
-- 主分支：`master`（PR 目标 `main`）
+- 主分支：`master`（PR 目标 `master`）

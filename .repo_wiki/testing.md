@@ -1,18 +1,21 @@
 # 离线测试体系
 
-> 六套测试，全部离线运行：mocked CCB/queue，不发送模型请求或真实回调。
+> 七套测试，全部离线运行：mocked CCB/queue，不发送模型请求或真实回调。
 
 ## 概述
 
-`magent` 的测试目标是验证安装/同步/审核生命周期的逻辑正确性，不依赖真实 CCB、Codex 凭据或授权线程。CCB 与 `codex queue` 用本地 fixture 替代；Git 用真实 git。三套测试覆盖三个层次：维护工具（install/sync）、监督器生命周期（review_runner）、同步审核 envelope（sync_review）。
+`magent` 的测试目标是验证安装/同步/审核生命周期的逻辑正确性，不依赖真实 CCB、Codex 凭据或授权线程。CCB 与 `codex queue` 用本地 fixture 替代；Git 用真实 git。核心三套覆盖三个层次：维护工具（install/sync）、监督器生命周期（review_runner）、同步审核 envelope（sync_review）；另有自动安装注册、技能配置、任务状态、stage3 分析器四套阶段 1/2/3 测试（见下文）。
 
-第三套 `test_sync_review.py` 用 POSIX-only 文件名/FIFO/mode/symlink 夹具，只能在 Linux/macOS 跑。前两套跨平台。
+`test_sync_review.py` 用 POSIX-only 文件名/FIFO/mode/symlink 夹具，只能在 Linux/macOS 跑。其余测试跨平台。
 
 ## 关键文件
 
 | 文件路径 | 说明 |
 |---------|------|
 | `tools/test_maintenance.py` | install/sync/共享检出状态回归 |
+| `tools/test_auto_install.py` | 角色复制 + `config.toml` 自动注册、冲突拒绝与回滚 |
+| `tools/test_skill_config.py` | 角色模板模型映射、SKILL.md 路由与 opt-in 静态检查 |
+| `scripts/test_task_state.py` | 长任务检查点状态机 |
 | `scripts/test_review_runner.py` | 监督器生命周期 E2E |
 | `scripts/test_sync_review.py` | 同步审核 envelope/schema parity |
 | `scripts/claude-review.sh` | 被测入口 |
@@ -54,7 +57,7 @@ python3 tools/test_stage3_analyzer.py
 python3 scripts/test_review_runner.py
 python3 scripts/test_sync_review.py "$PWD/scripts/claude-review.sh"   # POSIX only
 ```
-全部从仓库根执行。前两条跨平台；第三条 Linux/macOS。
+全部从仓库根执行。最后一条仅 Linux/macOS，其余跨平台。
 
 ## 工作流程
 
@@ -73,8 +76,9 @@ test_sync_review: FAKE_CCB + POSIX 夹具 → 跑同步审核 → 断言 envelop
 - `test_sync_review.py` 第一个参数是 `claude-review.sh` 路径：`"$PWD/scripts/claude-review.sh"`。
 - Windows 测试跳过 POSIX-only 夹具，但跑 `test_review_runner.py` 的 Job Object 崩溃用例。
 - 测试用真实 git 操作临时仓库；不会触碰本仓库工作树。
-- 改 `review_runner.py` / `review_support.py` / `review_result.py` / `claude-review.sh` 后应跑全部三套。
-- 改 `install.py` / `sync.py` 后至少跑 `test_maintenance.py`。
+- 改 `review_runner.py` / `review_support.py` / `review_result.py` / `claude-review.sh` 后应跑 `test_review_runner.py` 与 `test_sync_review.py`。
+- 改 `install.py` / `sync.py` / `register_agents.py` 后至少跑 `test_maintenance.py` 与 `test_auto_install.py`。
+- 改 `SKILL.md` / `roles/*.toml` 后跑 `test_skill_config.py`。
 
 ---
 
