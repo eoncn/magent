@@ -10,10 +10,10 @@
 ## 架构与核心
 
 - [overview.md](overview.md) — 项目身份：Codex skill、三步独立、默认关闭外部审核、状态外置
-- [skill-routing.md](skill-routing.md) — SKILL.md Section 1-2：SELECTIVE ROUTE 声明、四种路由、worker 委托契约
+- [skill-routing.md](skill-routing.md) — SKILL.md Section 1-2：SELECTIVE ROUTE 声明、五种路由、worker 委托契约
 - [verification-gate.md](verification-gate.md) — SKILL.md Section 3：独立 verifier 只读验证门、<30 行报告、FAIL 修复循环
 - [external-review.md](external-review.md) — SKILL.md Section 4：opt-in 规则、同步/后台模式、生命周期子命令、回调协议、verdict action
-- [roles.md](roles.md) — 四个具名角色模板（routine/high × advisor/verifier）与模型配置
+- [roles.md](roles.md) — 五个具名角色模板（routine/standard/high advisor + routine/high verifier）与模型配置
 
 ## 实现模块
 

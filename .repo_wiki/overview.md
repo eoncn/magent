@@ -23,7 +23,7 @@
 | `scripts/review_windows.py` | Windows Job Object / 字节范围锁 / 进程身份 |
 | `tools/install.py` | 把本检出链接进 Codex home（POSIX symlink / Windows junction） |
 | `tools/sync.py` | 通过 SSH 把已配置远端检出快进到本地 HEAD |
-| `roles/*.toml` | 五个具名角色模板（routine/high × advisor/verifier） |
+| `roles/*.toml` | 五个具名角色模板（routine/standard/high advisor + routine/high verifier） |
 
 ## 核心概念
 

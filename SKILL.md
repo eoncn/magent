@@ -1,6 +1,6 @@
 ---
 name: magent
-description: "Capability-routed multi-agent software delivery: classify task difficulty, delegate to routine/high subagents with tiered models, and independently verify; optionally request external Claude review with explicit opt-in."
+description: "Capability-routed multi-agent software delivery: classify task difficulty, delegate to routine/standard/high subagents with tiered models, and independently verify; optionally request external Claude review with explicit opt-in."
 ---
 
 # Magent
@@ -93,7 +93,7 @@ The Lead Coordinator MUST NOT run build, test, or lint commands, inspect raw log
 **The Lead remains the long-task owner.** Workers own bounded implementation only. Do not ask a worker to reconstruct earlier decisions from an old conversation. Use a lightweight, durable checkpoint for multi-stage work or whenever compaction/handoff/restart may occur:
 
 - The optional cross-platform command is `python3 <skill-root>/scripts/task_state.py` (Windows: `py -3`). Default state directory is `CODEX_HOME/magent-tasks` (falling back to `~/.codex/magent-tasks`); optional `MAGENT_TASKS_DIR` override. Never write task state into the business repository, Git index or external review state directory; do not record secrets.
-- Start once: `python3 scripts/task_state.py init --repo <absolute-path> --objective "<goal>" --scope "<owned paths>" --baseline <sha>`. Record returned `task_id` and `revision=0` in the Lead handoff. For recovery use `list --repo <path>` and `show <task_id>` before dispatching another worker.
+- Start once: `python3 <skill-root>/scripts/task_state.py init --repo <absolute-path> --objective "<goal>" --scope "<owned paths>" --baseline <sha>`. Record returned `task_id` and `revision=0` in the Lead handoff. For recovery use `list --repo <path>` and `show <task_id>` before dispatching another worker.
 - At meaningful milestones, before context compaction, and after failed verification, use `checkpoint <task_id> --expected-revision <revision> --phase <planning|implementation|verification|remediation|blocked> --completed "<achievement>" --next "<next action>" --route <routine|standard|high|solo> --verdict <pending|pass|fail|blocked> --retry-count <n>`. Multiple `--completed` or `--next` values are allowed. Use `--next ""` to clear next steps. A stale revision is a blocker: re-read state; do not overwrite another writer's progress. The Lead is the **single writer** for each task.
 - Mark final success only after the independent Verifier PASS and no pending steps: `checkpoint <id> --expected-revision <n> --phase verification --verdict pass --next "" --blocker ""`, then `close <id> --expected-revision <new-n>`. `close` fails unless the latest verdict is PASS and no blocker or next steps remain. An incomplete check may never be marked PASS.
 - Never treat a task checkpoint as proof of tests. The independent verifier's concise report is still authoritative for acceptance; parent must not inspect raw logs/diffs or run verification commands.

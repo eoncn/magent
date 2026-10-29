@@ -33,7 +33,7 @@ CLI 安装器默认把五个角色写入目标 Codex Home 的 `agents/` 并向 `
 
 ### 与 SKILL.md 的关系
 - Section 1 路由规则按名引用这五个角色。
-- Section 2 worker 委托契约适用于两个 advisor 角色。
+- Section 2 worker 委托契约适用于三个 advisor 角色。
 - Section 3 验证门适用于两个 verifier 角色。
 - 内置 advisor/reviewer 角色禁用；只允许这五个具名角色。
 
