@@ -8,9 +8,9 @@ import sys
 EXPECTED = {
     "sol_advisor_routine": ("sol-advisor-routine.toml", "gpt-6-luna", "xhigh"),
     "sol_advisor_standard": ("sol-advisor-standard.toml", "gpt-6.1-terra", "high"),
-    "sol_advisor_high": ("sol-advisor-high.toml", "gpt-6.1-sol", "high"),
+    "sol_advisor_high": ("sol-advisor-high.toml", "gpt-6.2-sol", "high"),
     "sol_verifier_routine": ("sol-verifier-routine.toml", "gpt-6-luna", "xhigh"),
-    "sol_verifier_high": ("sol-verifier-high.toml", "gpt-6.1-sol", "high"),
+    "sol_verifier_high": ("sol-verifier-high.toml", "gpt-6.2-sol", "high"),
 }
 
 

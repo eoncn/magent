@@ -15,9 +15,9 @@ Lead Coordinator 在动手之前必须显式声明一个 `SELECTIVE ROUTE` 块�
 | `SKILL.md` | Section 1 路由规则、Section 2 worker 委托契约、Section 3 验证门、Section 4 外部审核 |
 | `roles/sol-advisor-routine.toml` | `gpt-6-luna` / `xhigh`，routine 实现 |
 | `roles/sol-advisor-standard.toml` | `gpt-6.1-terra` / `high`，常规实现 |
-| `roles/sol-advisor-high.toml` | `gpt-6.1-sol` / `high`，高难度实现 |
+| `roles/sol-advisor-high.toml` | `gpt-6.2-sol` / `high`，高难度实现 |
 | `roles/sol-verifier-routine.toml` | `gpt-6-luna` / `xhigh`，routine 验证 |
-| `roles/sol-verifier-high.toml` | `gpt-6.1-sol` / `high`，高难度验证 |
+| `roles/sol-verifier-high.toml` | `gpt-6.2-sol` / `high`，高难度验证 |
 
 ## 核心概念
 
@@ -37,7 +37,7 @@ reasoning_rationale: <为什么选这个难度>
 | `solo` | 父会话自己实现 | 仅限微小、单文件、contained 编辑；验证仍必须委托 |
 | `delegate → sol_advisor_routine` | `gpt-6-luna` / `xhigh` | 低风险、明确且直接可验收的小任务 |
 | `delegate → sol_advisor_standard` | `gpt-6.1-terra` / `high` | **普通默认**：多文件功能、既有模式重构、中等难度调试 |
-| `delegate → sol_advisor_high` | `gpt-6.1-sol` / `high` | 未知根因跨系统、安全/权限、复杂并发、破坏性迁移、升级失败 |
+| `delegate → sol_advisor_high` | `gpt-6.2-sol` / `high` | 未知根因跨系统、安全/权限、复杂并发、破坏性迁移、升级失败 |
 | `verifier_agent: none` | —— | 仅用于无实现变更、无验证门的任务 |
 
 ### 升级规则
