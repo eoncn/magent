@@ -47,7 +47,7 @@
 1. 完成 git clone 或 git pull，核对阶段 1/2 新版本的 commit SHA，记为 CANDIDATE_SHA；保持此版本整个评测期间不变。
 2. 旧版固定使用 BASELINE_SHA：5148db65c007d3194d33bb56596ee1d33306d934。
 3. 划定测试环境：挑选**无生产凭据、无真实用户数据**的可重复仓库快照；每次任务创建独立目录/工作树。不要在真实业务 worktree 内开展 A/B。
-4. 确认本机有 Python 3.9+、git、codex；确认 Codex 账号可调用 gpt-6-luna、gpt-6.1-terra、gpt-6.1-sol，支持具名 subagent。先验证 roles 注册，不要自动退回别的模型。Windows 使用 PowerShell 和原生 Python；若参与可选 CCB 实测才需要 Git Bash。
+4. 确认本机有 Python 3.9+、git、codex；确认 Codex 账号可调用 gpt-6-luna、gpt-6.1-terra、gpt-6.2-sol，支持具名 subagent。先验证 roles 注册，不要自动退回别的模型。Windows 使用 PowerShell 和原生 Python；若参与可选 CCB 实测才需要 Git Bash。
 5. 两组必须使用相同的 Codex CLI 版本、主 Agent 模型与 effort、环境、测试约束、任务初始 commit、最大人工协助次数。模型版本或服务状态有差异要记录为限制，不能声称严格可归因。
 6. 优先不要启用 --claude-review。第三阶段仅评估内部路由和长任务机制；外部审核作为单独可选测试。
 
@@ -108,11 +108,11 @@
 
 1. 从指定 base_sha 创建两份全新代码副本 old/M01 和 new/M01（推荐 git clone 的本地副本并 checkout --detach 同一 SHA）；不要用已经做过旧版测试的工作目录继续跑新版。
 2. 复制**完全相同**的任务 prompt，明确可改范围、测试命令、禁止联网安装依赖/推生产等限制。显式调用 "$magent <任务>"（也可用 Codex 技能列表支持的等价调用，记录准确形式），不要自行指定 Terra 或 Sol。
-3. 分别指定各自 CODEX_HOME，主模型和 effort 固定（例如 gpt-6.1-sol / high），执行 Codex。在实际仓库目录运行，保存 Codex JSONL、最终消息和退出码。推荐先用 1 个 S 任务冒烟验证命令行、路由注册和工具许可，再批量跑。
+3. 分别指定各自 CODEX_HOME，主模型和 effort 固定（例如 gpt-6.2-sol / high），执行 Codex。在实际仓库目录运行，保存 Codex JSONL、最终消息和退出码。推荐先用 1 个 S 任务冒烟验证命令行、路由注册和工具许可，再批量跑。
 4. Linux/macOS 命令示例（在每组已配置的环境中，$PROMPT_FILE 是实际 prompt 文件路径，$TASK_DIR 是测试仓库路径）：
 
-       CODEX_HOME="<绝对路径>/codex-old" codex exec -C "$TASK_DIR" -m gpt-6.1-sol -c 'model_reasoning_effort="high"' --sandbox workspace-write --json - < "$PROMPT_FILE" > "old-M01.jsonl" 2> "old-M01.stderr.log"
-       CODEX_HOME="<绝对路径>/codex-new" codex exec -C "$TASK_DIR" -m gpt-6.1-sol -c 'model_reasoning_effort="high"' --sandbox workspace-write --json - < "$PROMPT_FILE" > "new-M01.jsonl" 2> "new-M01.stderr.log"
+       CODEX_HOME="<绝对路径>/codex-old" codex exec -C "$TASK_DIR" -m gpt-6.2-sol -c 'model_reasoning_effort="high"' --sandbox workspace-write --json - < "$PROMPT_FILE" > "old-M01.jsonl" 2> "old-M01.stderr.log"
+       CODEX_HOME="<绝对路径>/codex-new" codex exec -C "$TASK_DIR" -m gpt-6.2-sol -c 'model_reasoning_effort="high"' --sandbox workspace-write --json - < "$PROMPT_FILE" > "new-M01.jsonl" 2> "new-M01.stderr.log"
 
    以上两个 TASK_DIR 必须是**不同的干净仓库副本**。prompt 文件第一行必须显式激活 magent，示例：
 
