@@ -14,9 +14,9 @@ CLI 安装器默认把五个角色写入目标 Codex Home 的 `agents/` 并向 `
 |---------|--------|------|-----------|
 | `roles/sol-advisor-routine.toml` | `sol_advisor_routine` | `gpt-6-luna` | `xhigh` |
 | `roles/sol-advisor-standard.toml` | `sol_advisor_standard` | `gpt-6.1-terra` | `high` |
-| `roles/sol-advisor-high.toml` | `sol_advisor_high` | `gpt-6.1-sol` | `high` |
+| `roles/sol-advisor-high.toml` | `sol_advisor_high` | `gpt-6.2-sol` | `high` |
 | `roles/sol-verifier-routine.toml` | `sol_verifier_routine` | `gpt-6-luna` | `xhigh` |
-| `roles/sol-verifier-high.toml` | `sol_verifier_high` | `gpt-6.1-sol` | `high` |
+| `roles/sol-verifier-high.toml` | `sol_verifier_high` | `gpt-6.2-sol` | `high` |
 
 ## 核心概念
 
@@ -29,7 +29,7 @@ CLI 安装器默认把五个角色写入目标 Codex Home 的 `agents/` 并向 `
 ### 模型分层
 - routine：`gpt-6-luna` / `xhigh` —— 低风险的明确任务及常规验证。
 - standard：`gpt-6.1-terra` / `high` —— 普通软件工程的默认 Worker。
-- high：`gpt-6.1-sol` / `high` —— 复杂跨系统诊断、高风险实现与独立验证。
+- high：`gpt-6.2-sol` / `high` —— 复杂跨系统诊断、高风险实现与独立验证。
 
 ### 与 SKILL.md 的关系
 - Section 1 路由规则按名引用这五个角色。
