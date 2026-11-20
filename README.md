@@ -41,9 +41,9 @@
 | --- | --- | --- | --- |
 | `sol_advisor_routine` | `gpt-6-luna` | `xhigh` | 目标明确、边界清晰的常规实现 |
 | `sol_advisor_standard` | `gpt-6.1-terra` | `high` | 多文件功能、已有模式重构和中等难度调试 |
-| `sol_advisor_high` | `gpt-6.1-sol` | `high` | 复杂根因、安全/并发等高风险工作 |
+| `sol_advisor_high` | `gpt-6.2-sol` | `high` | 复杂根因、安全/并发等高风险工作 |
 | `sol_verifier_routine` | `gpt-6-luna` | `xhigh` | 普通任务的独立只读验收 |
-| `sol_verifier_high` | `gpt-6.1-sol` | `high` | 高风险不变量及复杂变更验收 |
+| `sol_verifier_high` | `gpt-6.2-sol` | `high` | 高风险不变量及复杂变更验收 |
 
 **注意：** 表格描述的是 Worker/Verifier 的默认配置，**不会更改你当前 Codex 主会话的模型**。实际能否调用取决于本机 Codex 版本、账户或自定义 provider 的模型支持情况；角色不可用时按技能规则报告阻塞，不静默换模型。
 
