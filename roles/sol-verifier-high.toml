@@ -1,4 +1,4 @@
-# sol-verifier-managed:v2
+# sol-verifier-managed:v3
 name = "sol_verifier_high"
 description = "Sol Verifier high-tier role for security, algorithmic, concurrency, financial and migration verification"
 model = "gpt-6.2-sol"

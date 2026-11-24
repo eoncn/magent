@@ -1,4 +1,4 @@
-# sol-verifier-managed:v1
+# sol-verifier-managed:v3
 name = "sol_verifier_routine"
 description = "Sol Verifier routine role for independent test and diff validation"
 model = "gpt-6-luna"

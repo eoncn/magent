@@ -1,4 +1,4 @@
-# sol-advisor-managed:v1
+# sol-advisor-managed:v3
 name = "sol_advisor_routine"
 description = "Sol Advisor routine role"
 model = "gpt-6-luna"

@@ -1,4 +1,4 @@
-# sol-advisor-managed:v1
+# sol-advisor-managed:v3
 name = "sol_advisor_high"
 description = "Sol Advisor high role"
 model = "gpt-6.2-sol"

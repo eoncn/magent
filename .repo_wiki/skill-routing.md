@@ -46,7 +46,11 @@ reasoning_rationale: <为什么选这个难度>
 - high 仍未解决，报告阻塞及缺证据，不得无上限重试。Verifier 仍是独立 gate；高风险选 high verifier。
 - 具体重试策略及长任务 checkpoint 见 verification-gate.md 和 docs/three-stage-implementation.md。
 
-### Worker 委托契约（Section 2）
+### Worker 委托契约（Section 2，Magent 派工协议 V3）
+
+所有 worker 和 verifier 都必须调用 `spawn_agent` 并显式传入
+`fork_turns: "none"`。这是 V3 唯一支持的上下文隔离方式。
+
 每次 worker dispatch prompt **必须** 遵循以下结构：
 
 ~~~text
@@ -75,7 +79,7 @@ VERIFICATION COMMANDS
 
 1. Lead Coordinator 读任务描述，评估复杂度、爆炸半径、模糊度。
 2. 写下 `SELECTIVE ROUTE` 块（含 rationale）。
-3. `solo`：父会话自己改代码；`delegate`：spawn 选定 worker subagent，fresh context，按委托契约给 prompt。
+3. `solo`：父会话自己改代码；`delegate`：调用 `spawn_agent` 并传入 `fork_turns: "none"`，再按委托契约给 prompt。
 4. 进入 [verification-gate.md](verification-gate.md)。
 
 ## 注意事项

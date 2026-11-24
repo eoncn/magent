@@ -33,6 +33,8 @@ class AutoRegistrationTests(unittest.TestCase):
         self.assertFalse(result["dry_run"])
         self.assertTrue(install.linked_to(self.home / "skills/magent", install.SOURCE))
         self.assertEqual(validate(self.home), [])
+        for path in (self.home / "agents").glob("*.toml"):
+            self.assertIn("-managed:v3", path.read_text(encoding="utf-8"))
         config = (self.home / "config.toml").read_text()
         self.assertEqual(config.count("[agents.sol_advisor_standard]"), 1)
         for name in EXPECTED:
@@ -109,6 +111,16 @@ class AutoRegistrationTests(unittest.TestCase):
         config.write_text("# original\n")
         install.install([self.home], include_roles=True, register_agents=False)
         self.assertEqual(config.read_text(), "# original\n")
+
+    def test_old_managed_role_is_replaced_and_backed_up(self):
+        self.home.mkdir()
+        target = self.home / "agents/sol-advisor-routine.toml"
+        target.parent.mkdir(parents=True)
+        target.write_text("# sol-advisor-managed:v1\nname = \"old\"\n", encoding="utf-8")
+        result = install.install([self.home], include_roles=True, register_agents=False)
+        self.assertIn("-managed:v3", target.read_text(encoding="utf-8"))
+        self.assertTrue(any(Path(path).read_text(encoding="utf-8").startswith("# sol-advisor-managed:v1")
+                            for path in result["backups"]))
 
     @unittest.skipIf(os.name == "nt", "Creating test symlinks may need Windows privileges")
     def test_config_symlink_refused(self):

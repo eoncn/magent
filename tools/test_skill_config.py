@@ -26,6 +26,9 @@ class RoutingTests(unittest.TestCase):
         self.assertIn("first argument", text)
         self.assertIn("--claude-review", text)
         self.assertIn("independent", text.lower())
+        self.assertIn("Magent delegation protocol: **V3**", text)
+        self.assertIn('fork_turns: "none"', text)
+        self.assertNotIn("fork_context", text)
 
     def test_registration_check(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -37,3 +37,22 @@
 - 路径：所有源文件引用均经 `Read` 验证存在。
 - 无孤立页面：每个内容页至少被 `index.md` 与至少一个其他内容页引用。
 - 信息准确性：角色模型/effort、退出码、环境变量、命令行参数均来自源码读取，未猜测。
+
+## [2026-11-24] update | 角色模板统一升级至 managed:v3，明确 V3 委托协议
+
+**操作类型**: 增量更新（代码提交同步）
+
+**关联提交**: `refactor(roles): unify managed template version to v3, codify fork_turns protocol`
+
+**变更内容**:
+
+| 操作 | 页面 | 变更说明 |
+| ---- | ---- | -------- |
+| 修正 | `roles.md` | 版本标记描述从 v1/v2 混用更新为统一 managed:v3；安装器行为说明对齐 |
+| 修正 | `skill-routing.md` | Worker 委托契约补充 V3 协议：spawn 必须传 `fork_turns: "none"` |
+
+**质量检查结果**:
+
+- 交叉引用完整性: ✅
+- 索引完整性: ✅
+- 信息准确性: ✅（CLAUDE.md Roles 章节已同步至 v3）

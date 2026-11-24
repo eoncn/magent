@@ -13,6 +13,8 @@ EXPECTED = {
     "sol_verifier_high": ("sol-verifier-high.toml", "gpt-6.2-sol", "high"),
 }
 
+ROLE_VERSION = "v3"
+
 
 def assignment(text, key):
     match = re.search(r'^\s*' + re.escape(key) + r'\s*=\s*["\x27]([^"\x27]+)["\x27]\s*(?:#.*)?$', text, re.M)
@@ -48,6 +50,8 @@ def validate(home):
             errors.append(f"{role}: missing role file: {path}")
             continue
         body = path.read_text(encoding="utf-8-sig")
+        if not re.search(r"^\s*#\s*[^\s]+-managed:" + re.escape(ROLE_VERSION) + r"\s*$", body, re.M):
+            errors.append(f"{role}: managed role template must be {ROLE_VERSION}")
         for field, value in (("name", role), ("model", model), ("model_reasoning_effort", effort)):
             found = assignment(body, field)
             if found != value:

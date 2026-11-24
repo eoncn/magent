@@ -1,4 +1,4 @@
-# sol-advisor-managed:v2
+# sol-advisor-managed:v3
 name = "sol_advisor_standard"
 description = "Terra standard worker: multi-file development and moderate debugging"
 model = "gpt-6.1-terra"
